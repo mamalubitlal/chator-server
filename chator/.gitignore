@@ -1,0 +1,19 @@
+# Environment files with secrets
+matrix/.env
+matrix/*.key
+
+# Synapse data (generated at runtime)
+matrix/synapse_data/
+matrix/media_store/
+matrix/uploads/
+
+# Logs
+*.log
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

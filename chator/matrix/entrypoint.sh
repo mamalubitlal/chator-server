@@ -1,0 +1,44 @@
+#!/bin/bash
+set -e
+
+# Configuration directory
+CONFIG_DIR="/data"
+TEMPLATE="$CONFIG_DIR/homeserver.yaml.template"
+OUTPUT="$CONFIG_DIR/homeserver.yaml"
+
+# Check if homeserver.yaml already exists
+if [ ! -f "$OUTPUT" ]; then
+    echo "Generating homeserver.yaml from template..."
+    
+    # Substitute environment variables
+    envsubst '${SYNAPSE_SERVER_NAME} ${SYNAPSE_REPORT_STATS} ${SUPABASE_DB_HOST} ${SUPABASE_DB_USER} ${SUPABASE_DB_PASSWORD} ${SUPABASE_DB_NAME}' < "$TEMPLATE" > "$OUTPUT"
+    
+    echo "Configuration generated successfully"
+else
+    echo "Using existing homeserver.yaml"
+fi
+
+# Generate log config if missing
+if [ ! -f "$CONFIG_DIR/chator.log.config" ]; then
+    cat > "$CONFIG_DIR/chator.log.config" << 'EOF'
+version: 1
+formatters:
+  precise:
+    format: '%(asctime)s - %(name)s - %(lineno)d - %(levelname)s - %(request)s - %(message)s'
+handlers:
+  console:
+    class: logging.StreamHandler
+    formatter: precise
+loggers:
+  synapse.storage.SQL:
+    level: WARNING
+root:
+  level: INFO
+  handlers: [console]
+disable_existing_loggers: false
+EOF
+    echo "Log config generated"
+fi
+
+# Run Synapse
+exec python -m synapse.app.homeserver

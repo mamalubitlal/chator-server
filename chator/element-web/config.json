@@ -1,0 +1,81 @@
+{
+  "default_server_config": {
+    "m.homeserver": {
+      "base_url": "https://chator.k.vu",
+      "server_name": "chator.k.vu"
+    }
+  },
+  "branding": {
+    "app_name": "чатор",
+    "welcome_background": "#4A90E2",
+    "auth_footer_links": [],
+    "logo": "img/chator-logo.svg"
+  },
+  "theme": "light",
+  "custom_themes": [
+    {
+      "name": "чатор Blue",
+      "is_dark": false,
+      "colors": {
+        "accent-color": "#4A90E2",
+        "primary-color": "#5BA3F5",
+        "warning-color": "#FF6B6B",
+        "sidebar-color": "#F0F7FF",
+        "roomlist-background-color": "#FFFFFF",
+        "roomlist-text-color": "#1A1A2E",
+        "roomlist-text-secondary-color": "#6B7280",
+        "roomlist-highlights-color": "#E8F4FF",
+        "roomlist-separator-color": "#E5E7EB",
+        "timeline-background-color": "#FFFFFF",
+        "timeline-text-color": "#1A1A2E"
+      }
+    },
+    {
+      "name": "чатор Dark",
+      "is_dark": true,
+      "colors": {
+        "accent-color": "#5BA3F5",
+        "primary-color": "#4A90E2",
+        "warning-color": "#FF6B6B",
+        "sidebar-color": "#1A1A2E",
+        "roomlist-background-color": "#0F0F1A",
+        "roomlist-text-color": "#FFFFFF",
+        "roomlist-text-secondary-color": "#9CA3AF",
+        "roomlist-highlights-color": "#1E1E3F",
+        "roomlist-separator-color": "#2D2D44",
+        "timeline-background-color": "#0F0F1A",
+        "timeline-text-color": "#FFFFFF"
+      }
+    }
+  ],
+  "default_theme": "чатор Blue",
+  "default_country_code": "RU",
+  "default_language": "ru",
+  "show_labs_settings": false,
+  "features": {
+    "feature_pinning": true,
+    "feature_custom_status": true,
+    "feature_custom_tags": true,
+    "feature_state_counters": true,
+    "feature_many_integration_managers": true,
+    "feature_mjolnir": false,
+    "feature_new_spinner": true,
+    "feature_phone_verification": true,
+    "feature_share_history_on_invite": true,
+    "feature_new_room_list": true,
+    "feature_video_rooms": true,
+    "feature_element_call_video_rooms": true
+  },
+  "default_federate": true,
+  "fallback_hs_name": "чатор",
+  "posthog": {
+    "project_api_key": "",
+    "api_host": ""
+  },
+  "map_style_url": "",
+  "element_call": {
+    "url": "https://app.element.io"
+  },
+  "privacy_policy_url": "",
+  "terms_and_conditions_url": ""
+}

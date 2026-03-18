@@ -1,0 +1,25 @@
+# Render Configuration for Matrix Synapse
+services:
+  - type: web
+    name: chator-matrix
+    env: docker
+    region: frankfurt
+    plan: starter
+    branch: main
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    envVars:
+      - key: SYNAPSE_SERVER_NAME
+        sync: false
+      - key: SYNAPSE_REPORT_STATS
+        value: yes
+      - key: SUPABASE_DB_HOST
+        sync: false
+      - key: SUPABASE_DB_USER
+        sync: false
+      - key: SUPABASE_DB_PASSWORD
+        sync: false
+      - key: SUPABASE_DB_NAME
+        sync: false
+    healthCheckPath: /_matrix/client/versions
+    autoDeploy: true

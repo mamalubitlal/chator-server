@@ -1,0 +1,66 @@
+# Matrix Synapse Configuration for чатор
+# Generated for Render + Supabase deployment
+
+server_name: "${SYNAPSE_SERVER_NAME}"
+public_baseurl: "https://${SYNAPSE_SERVER_NAME}/"
+
+# Branding
+branding:
+  app_name: "чатор"
+  welcome_background: "#4A90E2"
+
+# Database - Supabase PostgreSQL
+database:
+  name: psycopg2
+  args:
+    user: "${SUPABASE_DB_USER}"
+    password: "${SUPABASE_DB_PASSWORD}"
+    database: "${SUPABASE_DB_NAME}"
+    host: "${SUPABASE_DB_HOST}"
+    port: 5432
+    cp_min: 5
+    cp_max: 10
+
+# Listeners
+listeners:
+  - port: 8008
+    tls: false
+    type: http
+    x_forwarded: true
+    resources:
+      - names: [client, federation]
+        compress: false
+
+# Logging
+log_config: "${SYNAPSE_CONFIG_DIR}/chator.log.config"
+
+# Media storage
+media_store_path: "${SYNAPSE_DATA_DIR}/media_store"
+uploads_path: "${SYNAPSE_DATA_DIR}/uploads"
+
+# Registration - enable for initial setup, then disable
+enable_registration: true
+
+# Metrics (optional, useful for monitoring)
+enable_metrics: true
+
+# Turn server (for voice/video calls) - configure later
+# turn_uris: []
+# turn_shared_secret: ""
+
+# Enable presence
+use_presence: true
+
+# Experimental features (Sliding Sync for Element X)
+experimental_features:
+  msc3575_enabled: true
+
+# Element Call (Jitsi) integration - FREE voice/video calls
+jitsi:
+  preferred_domain: "meet.jit.si"
+
+# Widgets (for Element Call button)
+integrations_ui_url: "https://scalar.vector.im/"
+integrations_rest_url: "https://scalar.vector.im/"
+integrations_widgets_urls:
+  - "https://scalar.vector.im/"
