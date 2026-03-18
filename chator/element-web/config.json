@@ -9,7 +9,7 @@
     "app_name": "чатор",
     "welcome_background": "#4A90E2",
     "auth_footer_links": [],
-    "logo": "img/chator-logo.svg"
+    "logo": "chator-logo.png"
   },
   "theme": "light",
   "custom_themes": [
