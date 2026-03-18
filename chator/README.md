@@ -130,8 +130,9 @@ Your logo is at: https://nopaste.net/chator
 2. **Test login** with Element
 3. **Add logo** to Element Web
 4. **Invite beta users** (Russian teens)
-5. **Add bridges** (Telegram, VK) if needed
-6. **Scale** when you have users
+5. **Build mobile apps** (optional, see `mobile/README.md`)
+6. **Add bridges** (Telegram, VK) if needed
+7. **Scale** when you have users
 
 ---
 
