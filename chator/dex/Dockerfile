@@ -16,9 +16,12 @@ COPY config.yaml /etc/dex/config.yaml.template
 # Create data directory for SQLite
 RUN mkdir -p /var/dex && chown -R 1001:1001 /var/dex
 
-# Entry point script to substitute env vars
+# Copy and set up entrypoint script
 COPY docker-entrypoint.sh /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh
+
+# Switch back to non-root user (Dex default)
+USER 1001:1001
 
 # Expose Dex port
 EXPOSE 5556
