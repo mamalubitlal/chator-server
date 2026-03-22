@@ -1,5 +1,6 @@
 # Dex OIDC Server for чатор
 # Based on: https://dexidp.io/docs/
+# Custom theme: чатор (Russian localization + branding)
 
 FROM ghcr.io/dexidp/dex:latest
 
@@ -12,6 +13,9 @@ RUN mkdir -p /etc/dex
 
 # Copy template configuration
 COPY config.yaml /etc/dex/config.yaml.template
+
+# Copy чатор custom theme (Russian + branding)
+COPY web/themes/chator /etc/dex/themes/chator
 
 # Create data directory for SQLite
 RUN mkdir -p /var/dex && chown -R 1001:1001 /var/dex

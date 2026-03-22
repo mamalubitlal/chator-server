@@ -21,6 +21,7 @@ storage:
 # Web interface
 web:
   http: 0.0.0.0:5556
+  theme: chator
 
 # Clients that can use Dex for OIDC
 staticClients:
