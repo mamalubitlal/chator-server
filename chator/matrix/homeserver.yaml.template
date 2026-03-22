@@ -4,6 +4,9 @@
 server_name: "${SYNAPSE_SERVER_NAME}"
 public_baseurl: "https://${SYNAPSE_SERVER_NAME}/"
 
+# Signing key (auto-generated on first start)
+signing_key: "${SIGNING_KEY}"
+
 # Branding
 branding:
   app_name: "чатор"

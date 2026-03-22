@@ -15,12 +15,23 @@ fi
 MACAROON_SECRET=$(cat "$MACAROON_KEY_FILE")
 export MACAROON_SECRET
 
+# Generate signing key if missing (32 bytes, base64 encoded for Synapse)
+SIGNING_KEY_FILE="$CONFIG_DIR/chator.signing.key"
+if [ ! -f "$SIGNING_KEY_FILE" ]; then
+    echo "Generating signing key..."
+    # Generate 32 random bytes and format as Synapse signing key
+    openssl rand -base64 32 | tr -d '\n' > "$SIGNING_KEY_FILE"
+fi
+# Read the signing key and export for template
+SIGNING_KEY=$(cat "$SIGNING_KEY_FILE")
+export SIGNING_KEY
+
 # Check if homeserver.yaml already exists
 if [ ! -f "$OUTPUT" ]; then
     echo "Generating homeserver.yaml from template..."
     
     # Substitute environment variables
-    envsubst '${SYNAPSE_SERVER_NAME} ${SYNAPSE_REPORT_STATS} ${SYNAPSE_CONFIG_DIR} ${SYNAPSE_DATA_DIR} ${SUPABASE_DB_HOST} ${SUPABASE_DB_USER} ${SUPABASE_DB_PASSWORD} ${SUPABASE_DB_NAME} ${MACAROON_SECRET}' < "$TEMPLATE" > "$OUTPUT"
+    envsubst '${SYNAPSE_SERVER_NAME} ${SYNAPSE_REPORT_STATS} ${SYNAPSE_CONFIG_DIR} ${SYNAPSE_DATA_DIR} ${SUPABASE_DB_HOST} ${SUPABASE_DB_USER} ${SUPABASE_DB_PASSWORD} ${SUPABASE_DB_NAME} ${MACAROON_SECRET} ${SIGNING_KEY}' < "$TEMPLATE" > "$OUTPUT"
     
     echo "Configuration generated successfully"
 else
