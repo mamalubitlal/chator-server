@@ -15,18 +15,21 @@ fi
 MACAROON_SECRET=$(cat "$MACAROON_KEY_FILE")
 export MACAROON_SECRET
 
-# Delete old signing key to force regeneration (fixes "seed must be 32 bytes" error)
+# Delete old signing key to force regeneration (fixes format errors)
 SIGNING_KEY_FILE="$CONFIG_DIR/chator.signing.key"
 if [ -f "$SIGNING_KEY_FILE" ]; then
     echo "🗑️  Deleting old signing key (will regenerate)..."
     rm "$SIGNING_KEY_FILE"
 fi
 
-# Generate signing key if missing (32 bytes, base64 encoded for Synapse)
+# Generate signing key if missing (Synapse format: ed25519 <key_id> <base64>)
 if [ ! -f "$SIGNING_KEY_FILE" ]; then
     echo "Generating signing key..."
     # Generate 32 random bytes and format as Synapse signing key
-    openssl rand -base64 32 | tr -d '\n' > "$SIGNING_KEY_FILE"
+    # Format: ed25519 <key_id> <base64_key>
+    KEY_ID=$(date +%s | sha256sum | base64 | head -c 4 | tr -d '=+')
+    KEY_BYTES=$(openssl rand -base64 32 | tr -d '\n')
+    echo "ed25519 $KEY_ID $KEY_BYTES" > "$SIGNING_KEY_FILE"
 fi
 # Read the signing key and export for template
 SIGNING_KEY=$(cat "$SIGNING_KEY_FILE")
