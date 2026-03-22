@@ -40,5 +40,5 @@ EOF
     echo "Log config generated"
 fi
 
-# Run Synapse
-exec python -m synapse.app.homeserver
+# Run Synapse with config file
+exec python -m synapse.app.homeserver -c "$OUTPUT"
