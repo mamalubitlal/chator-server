@@ -11,7 +11,7 @@ if [ ! -f "$OUTPUT" ]; then
     echo "Generating homeserver.yaml from template..."
     
     # Substitute environment variables
-    envsubst '${SYNAPSE_SERVER_NAME} ${SYNAPSE_REPORT_STATS} ${SUPABASE_DB_HOST} ${SUPABASE_DB_USER} ${SUPABASE_DB_PASSWORD} ${SUPABASE_DB_NAME}' < "$TEMPLATE" > "$OUTPUT"
+    envsubst '${SYNAPSE_SERVER_NAME} ${SYNAPSE_REPORT_STATS} ${SYNAPSE_CONFIG_DIR} ${SYNAPSE_DATA_DIR} ${SUPABASE_DB_HOST} ${SUPABASE_DB_USER} ${SUPABASE_DB_PASSWORD} ${SUPABASE_DB_NAME}' < "$TEMPLATE" > "$OUTPUT"
     
     echo "Configuration generated successfully"
 else

@@ -32,7 +32,7 @@ listeners:
         compress: false
 
 # Logging
-log_config: "${SYNAPSE_CONFIG_DIR}/chator.log.config"
+log_config: "/data/chator.log.config"
 
 # Media storage
 media_store_path: "${SYNAPSE_DATA_DIR}/media_store"
