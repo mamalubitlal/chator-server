@@ -4,10 +4,10 @@
 # Environment variables (set in Render dashboard):
 # - DEX_ISSUER: Your Dex URL (e.g., https://chator-auth.onrender.com)
 # - DEX_CLIENT_SECRET: Shared secret with Synapse
-# - SYNAPSE_URL: Your Synapse URL (e.g., https://chator-matrix.onrender.com)
+# - SYNAPSE_URL: Your Synapse URL (e.g., https://chator-server.onrender.com)
+# - DEX_STATIC_PASSWORD_HASH: Bcrypt hash of admin password (REQUIRED!)
 # - DEX_STATIC_PASSWORD_EMAIL: Admin email (default: admin@chator.local)
 # - DEX_STATIC_PASSWORD_USERNAME: Admin username (default: admin)
-# - DEX_STATIC_PASSWORD_HASH: Bcrypt hash of admin password (REQUIRED!)
 
 # Public URL where Dex is accessible
 issuer: ${DEX_ISSUER}
@@ -30,20 +30,16 @@ staticClients:
   name: 'Matrix Synapse'
   secret: '${DEX_CLIENT_SECRET}'
 
-# Connectors - how users authenticate
-connectors:
-# Static password connector (built-in)
-- type: mockPasswordDB
-  id: logins
-  name: Email
-  config:
-    usernames:
-    - email: "${DEX_STATIC_PASSWORD_EMAIL:-admin@chator.local}"
-      password: "${DEX_STATIC_PASSWORD_HASH}"
-      username: "${DEX_STATIC_PASSWORD_USERNAME:-admin}"
-      userID: "1"
+# Static passwords - users stored directly in config
+# Add more users by copying the block below
+staticPasswords:
+- email: "${DEX_STATIC_PASSWORD_EMAIL}"
+  # Bcrypt hash of password (generate with: docker run ghcr.io/dexidp/dex:latest dex password hash YOURPASSWORD)
+  hash: "${DEX_STATIC_PASSWORD_HASH}"
+  username: "${DEX_STATIC_PASSWORD_USERNAME}"
+  userID: "1"
 
-# Enable password connector
+# Enable the built-in password database
 enablePasswordDB: true
 
 # Logging

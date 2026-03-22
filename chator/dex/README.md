@@ -20,22 +20,21 @@ Dex is an identity service that uses OpenID Connect (OIDC) to provide authentica
 
 Since you can't access Render shell, generate the password hash on your computer:
 
-**Option A: Using Docker (Recommended)**
+**Option A: Online Generator (Easiest!)**
+Go to: **https://bcrypt-generator.com/**
+1. Enter password: `Bogdan2014`
+2. Rounds: `10`
+3. Click "Generate"
+4. Copy the hash (starts with `$2a$10$...`)
+
+**Option B: Using Docker (if installed)**
 ```bash
 docker run --rm ghcr.io/dexidp/dex:latest dex password hash YOURPASSWORD
 ```
 
-**Option B: Using htpasswd (if you have Apache tools)**
-```bash
-htpasswd -nbB admin YOURPASSWORD
-```
-
-**Option C: Online generator**
-Go to https://bcrypt-generator.com/ and generate a bcrypt hash (rounds: 10)
-
 **Save the output!** It will look like:
 ```
-$2a$10$2b2c9e3b8f8e8c8d8e8f8g8h8i8j8k8l8m8n8o8p8q8r8s8t8u8v
+$2a$10$y0B5lP3LKE0P6vf1ltehy.bb7TLMMnsoHgIJBE/6lMzwZCvkArsyG
 ```
 
 ---
@@ -59,7 +58,7 @@ $2a$10$2b2c9e3b8f8e8c8d8e8f8g8h8i8j8k8l8m8n8o8p8q8r8s8t8u8v
    |-----|-------|-------|
    | `DEX_ISSUER` | `https://chator-auth.onrender.com` | Will be auto-filled after deploy |
    | `DEX_CLIENT_SECRET` | `matrix-synapse-secret-change-me` | Make this random! |
-   | `SYNAPSE_URL` | `https://chator-matrix.onrender.com` | Your Synapse URL |
+   | `SYNAPSE_URL` | `https://chator-server.onrender.com` | Your Synapse URL |
    | `DEX_STATIC_PASSWORD_EMAIL` | `admin@chator.local` | Your admin email |
    | `DEX_STATIC_PASSWORD_USERNAME` | `admin` | Your admin username |
    | `DEX_STATIC_PASSWORD_HASH` | `$2a$10$...` | **Paste the hash from Step 1** |
@@ -98,40 +97,27 @@ Restart Synapse: Render Dashboard → Manual Deploy → **Restart**
 
 ## Adding More Users
 
-Since you can't edit files on Render, you have two options:
-
-### Option A: Add to config.yaml (Commit to Git)
-
 Edit `chator/dex/config.yaml` locally:
 
 ```yaml
-connectors:
-- type: mockPasswordDB
-  id: logins
-  name: Email
-  config:
-    usernames:
-    - email: "admin@chator.local"
-      password: "$2a$10$..."  # Hash 1
-      username: "admin"
-      userID: "1"
-    - email: "user2@chator.local"
-      password: "$2a$10$..."  # Hash 2
-      username: "user2"
-      userID: "2"
+staticPasswords:
+- email: "admin@chator.local"
+  hash: "$2a$10$..."  # Hash 1
+  username: "admin"
+  userID: "1"
+- email: "user2@chator.local"
+  hash: "$2a$10$..."  # Hash 2
+  username: "user2"
+  userID: "2"
 ```
 
 Commit and push - Render will auto-deploy!
-
-### Option B: Use Multiple Env Vars (Advanced)
-
-Modify `docker-entrypoint.sh` to support multiple users via env vars. For now, Option A is simpler.
 
 ---
 
 ## Connectors (Advanced)
 
-Dex supports multiple authentication backends. Add these to `config.yaml`:
+Dex supports multiple authentication backends. Add to `config.yaml`:
 
 ### GitHub OAuth
 
@@ -144,7 +130,7 @@ connectors:
     clientID: $GITHUB_CLIENT_ID
     clientSecret: $GITHUB_CLIENT_SECRET
     redirectURI: https://chator-auth.onrender.com/callback
-    org: your-org  # Optional: restrict to org members
+    org: your-org
 ```
 
 ### Google OAuth
@@ -159,7 +145,7 @@ connectors:
     clientSecret: $GOOGLE_CLIENT_SECRET
     redirectURI: https://chator-auth.onrender.com/callback
     hostedDomains:
-    - chator.k.vu  # Optional: restrict to domain
+    - chator.k.vu
 ```
 
 ### LDAP/Active Directory
@@ -194,7 +180,7 @@ storage:
     file: /var/dex/dex.db
 ```
 
-Good for testing and small deployments (< 100 users). Data persists in the container.
+Good for testing and small deployments (< 100 users).
 
 ### PostgreSQL (Production)
 ```yaml
@@ -244,16 +230,10 @@ redirectURIs:
 Check `client_id` and `client_secret` match in both Dex and Synapse configs.
 
 ### "User mapping failed"
-Ensure OIDC claims (`preferred_username`, `email`, `name`) are returned by Dex. Check Dex logs in Render dashboard.
+Ensure OIDC claims (`preferred_username`, `email`, `name`) are returned by Dex. Check Dex logs.
 
 ### "Issuer mismatch"
 Make sure `DEX_ISSUER` env var matches the actual Render URL.
-
-### "Invalid password hash"
-Regenerate the hash with:
-```bash
-docker run --rm ghcr.io/dexidp/dex:latest dex password hash YOURPASSWORD
-```
 
 ---
 
@@ -263,7 +243,7 @@ docker run --rm ghcr.io/dexidp/dex:latest dex password hash YOURPASSWORD
 |----------|----------|-------------|---------|
 | `DEX_ISSUER` | Yes | Public URL of Dex service | `https://chator-auth.onrender.com` |
 | `DEX_CLIENT_SECRET` | Yes | Shared secret with Synapse | `matrix-synapse-secret-change-me` |
-| `SYNAPSE_URL` | Yes | URL of Matrix Synapse | `https://chator-matrix.onrender.com` |
+| `SYNAPSE_URL` | Yes | URL of Matrix Synapse | `https://chator-server.onrender.com` |
 | `DEX_STATIC_PASSWORD_HASH` | Yes | Bcrypt hash of admin password | `$2a$10$...` |
 | `DEX_STATIC_PASSWORD_EMAIL` | No | Admin email | `admin@chator.local` |
 | `DEX_STATIC_PASSWORD_USERNAME` | No | Admin username | `admin` |
