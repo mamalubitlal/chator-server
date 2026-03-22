@@ -86,19 +86,18 @@ integrations_widgets_urls:
 # See: https://dexidp.io/docs/
 # Deploy Dex service first, then enable OIDC
 # Required env vars in Render: DEX_ISSUER, DEX_CLIENT_ID, DEX_CLIENT_SECRET
-# TEMPORARILY DISABLED - enable after fixing env var substitution
-oidc_providers: []
-# - idp_id: dex
-#   idp_name: "чатор Login"
-#   idp_brand: "chator"
-#   issuer: "${DEX_ISSUER:-https://chator-auth.onrender.com}"
-#   client_id: "${DEX_CLIENT_ID:-matrix-synapse}"
-#   client_secret: "${DEX_CLIENT_SECRET:-matrix-synapse-secret-change-me}"
-#   scopes: ["openid", "profile", "email"]
-#   user_mapping_provider:
-#     config:
-#       localpart_template: "{{ user.preferred_username }}"
-#       display_name_template: "{{ user.name }}"
-#       email_template: "{{ user.email }}"
-#   discover: true
-#   skip_verification: false
+oidc_providers:
+  - idp_id: dex
+    idp_name: "чатор Login"
+    idp_brand: "chator"
+    issuer: "${DEX_ISSUER}"
+    client_id: "${DEX_CLIENT_ID}"
+    client_secret: "${DEX_CLIENT_SECRET}"
+    scopes: ["openid", "profile", "email"]
+    user_mapping_provider:
+      config:
+        localpart_template: "{{ user.preferred_username }}"
+        display_name_template: "{{ user.name }}"
+        email_template: "{{ user.email }}"
+    discover: true
+    skip_verification: false

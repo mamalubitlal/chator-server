@@ -43,19 +43,8 @@ export SIGNING_KEY
 if [ ! -f "$OUTPUT" ]; then
     echo "Generating homeserver.yaml from template..."
     
-    # Debug: show what env vars are available
-    echo "🔍 DEX_ISSUER=$DEX_ISSUER"
-    echo "🔍 DEX_CLIENT_ID=$DEX_CLIENT_ID"
-    echo "🔍 DEX_CLIENT_SECRET=${DEX_CLIENT_SECRET:0:8}..."
-    
     # Substitute ALL environment variables (no list = substitutes everything it finds)
     envsubst < "$TEMPLATE" > "$OUTPUT"
-    
-    # Verify substitution worked
-    if grep -q '\${DEX_ISSUER}' "$OUTPUT"; then
-        echo "❌ ERROR: DEX_ISSUER was not substituted!"
-        exit 1
-    fi
     
     echo "Configuration generated successfully"
 else
