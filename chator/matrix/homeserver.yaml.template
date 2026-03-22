@@ -85,11 +85,12 @@ integrations_widgets_urls:
 # OIDC Authentication via Dex
 # See: https://dexidp.io/docs/
 # Deploy Dex service first, then enable OIDC
+# Required env vars in Render: DEX_ISSUER, DEX_CLIENT_ID, DEX_CLIENT_SECRET
 oidc_providers:
   - idp_id: dex
     idp_name: "чатор Login"
     idp_brand: "chator"
-    issuer: "${DEX_ISSUER:-https://auth.chator.k.vu}"
+    issuer: "${DEX_ISSUER:-https://chator-auth.onrender.com}"
     client_id: "${DEX_CLIENT_ID:-matrix-synapse}"
     client_secret: "${DEX_CLIENT_SECRET:-matrix-synapse-secret-change-me}"
     scopes: ["openid", "profile", "email"]
