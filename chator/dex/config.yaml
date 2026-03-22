@@ -2,9 +2,10 @@
 # https://dexidp.io/docs/configuration/
 
 # Public URL where Dex is accessible
-issuer: https://auth.chator.k.vu
+# Set DEX_ISSUER env var on Render: https://your-app.onrender.com
+issuer: ${DEX_ISSUER}
 
-# Storage - SQLite for simplicity (upgrade to postgres later)
+# Storage - SQLite for simplicity (free tier)
 storage:
   type: sqlite3
   config:
@@ -14,23 +15,13 @@ storage:
 web:
   http: 0.0.0.0:5556
 
-# Static passwords - users can login with email/password
-# Add more users as needed
-staticPasswords:
-- email: "uggan@chator.k.vu"
-  # Hash for: changeme123
-  # Generate with: docker run ghcr.io/dexidp/dex:latest dex password hash changeme123
-  hash: "$2a$10$2b2c9e3b8f8e8c8d8e8f8g8h8i8j8k8l8m8n8o8p8q8r8s8t8u8v"
-  username: "uggan"
-  userID: "1"
-
 # Clients that can use Dex for OIDC
 staticClients:
 - id: matrix-synapse
   redirectURIs:
-  - 'https://chator.k.vu/_synapse/client/oidc/callback'
+  - '${SYNAPSE_URL}/_synapse/client/oidc/callback'
   name: 'Matrix Synapse'
-  secret: 'matrix-synapse-secret-change-me'
+  secret: '${DEX_CLIENT_SECRET}'
 
 # Connectors - how users authenticate
 connectors:
@@ -39,10 +30,12 @@ connectors:
   id: logins
   name: Email
   config:
+    # Add users here - generate hashes with:
+    # docker run ghcr.io/dexidp/dex:latest dex password hash YOURPASSWORD
     usernames:
-    - email: "uggan@chator.k.vu"
+    - email: "admin@chator.local"
       password: "$2a$10$2b2c9e3b8f8e8c8d8e8f8g8h8i8j8k8l8m8n8o8p8q8r8s8t8u8v"
-      username: "uggan"
+      username: "admin"
       userID: "1"
 
 # Enable password connector

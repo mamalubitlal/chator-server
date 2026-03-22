@@ -1,0 +1,18 @@
+#!/bin/sh
+# Dex entrypoint - substitute environment variables in config
+
+set -e
+
+echo "🔐 Starting Dex OIDC for чатор..."
+
+# Substitute environment variables in config template
+envsubst '${DEX_ISSUER} ${DEX_CLIENT_SECRET} ${SYNAPSE_URL}' \
+  < /etc/dex/config.yaml.template \
+  > /etc/dex/config.yaml
+
+echo "✅ Config generated:"
+cat /etc/dex/config.yaml
+
+echo ""
+echo "🚀 Starting Dex..."
+exec "$@"

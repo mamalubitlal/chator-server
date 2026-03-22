@@ -1,14 +1,18 @@
 # Matrix Synapse OIDC Configuration for Dex
 # Add this to homeserver.yaml or include separately
+# 
+# Environment variables needed on Render:
+# - DEX_ISSUER: https://chator-auth.onrender.com
+# - DEX_CLIENT_ID: matrix-synapse
+# - DEX_CLIENT_SECRET: matrix-synapse-secret-change-me
 
-# OIDC Authentication via Dex
 oidc_providers:
   - idp_id: dex
     idp_name: "чатор Login"
     idp_brand: "chator"
-    issuer: "https://auth.chator.k.vu"
-    client_id: "matrix-synapse"
-    client_secret: "matrix-synapse-secret-change-me"
+    issuer: "${DEX_ISSUER}"
+    client_id: "${DEX_CLIENT_ID:-matrix-synapse}"
+    client_secret: "${DEX_CLIENT_SECRET}"
     scopes: ["openid", "profile", "email"]
     user_mapping_provider:
       config:
