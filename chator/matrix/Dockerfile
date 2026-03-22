@@ -1,8 +1,8 @@
 # Matrix Synapse Dockerfile for Render + Supabase
 FROM matrixdotorg/synapse:latest
 
-# Install envsubst for template processing
-RUN apk add --no-cache curl gettext
+# Install envsubst for template processing (Debian-based, not Alpine!)
+RUN apt-get update && apt-get install -y --no-install-recommends curl gettext && rm -rf /var/lib/apt/lists/*
 
 # Copy configuration files
 COPY homeserver.yaml.template /data/homeserver.yaml.template
