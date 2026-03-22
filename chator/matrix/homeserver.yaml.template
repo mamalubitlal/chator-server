@@ -41,6 +41,9 @@ uploads_path: "${SYNAPSE_DATA_DIR}/uploads"
 # Registration - enable for initial setup, then disable
 enable_registration: true
 
+# Report usage stats to Matrix.org (helps the project!)
+report_stats: "${SYNAPSE_REPORT_STATS:-no}"
+
 # Metrics (optional, useful for monitoring)
 enable_metrics: true
 
