@@ -1,0 +1,45 @@
+services:
+# Matrix Synapse Server
+- type: web
+  name: chator-matrix
+  env: docker
+  region: frankfurt
+  plan: starter
+  rootDir: matrix
+  branch: main
+  healthCheckPath: /_matrix/client/versions
+  envVars:
+  - key: SYNAPSE_SERVER_NAME
+    sync: false
+  - key: SYNAPSE_REPORT_STATS
+    value: yes
+  - key: SUPABASE_DB_HOST
+    sync: false
+  - key: SUPABASE_DB_USER
+    sync: false
+  - key: SUPABASE_DB_PASSWORD
+    sync: false
+  - key: SUPABASE_DB_NAME
+    value: postgres
+
+# Dex OIDC Provider
+- type: web
+  name: chator-auth
+  env: docker
+  region: frankfurt
+  plan: starter
+  rootDir: dex
+  branch: main
+  healthCheckPath: /healthz
+  envVars:
+  - key: DEX_ISSUER
+    value: https://auth.chator.k.vu
+  - key: DEX_CLIENT_SECRET
+    value: matrix-synapse-secret-change-me
+
+# Element Web (static site)
+- type: static
+  name: chator-web
+  region: frankfurt
+  rootDir: element-web
+  branch: main

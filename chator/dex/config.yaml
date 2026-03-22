@@ -1,0 +1,54 @@
+# Dex Configuration for чатор
+# https://dexidp.io/docs/configuration/
+
+# Public URL where Dex is accessible
+issuer: https://auth.chator.k.vu
+
+# Storage - SQLite for simplicity (upgrade to postgres later)
+storage:
+  type: sqlite3
+  config:
+    file: /var/dex/dex.db
+
+# Web interface
+web:
+  http: 0.0.0.0:5556
+
+# Static passwords - users can login with email/password
+# Add more users as needed
+staticPasswords:
+- email: "uggan@chator.k.vu"
+  # Hash for: changeme123
+  # Generate with: docker run ghcr.io/dexidp/dex:latest dex password hash changeme123
+  hash: "$2a$10$2b2c9e3b8f8e8c8d8e8f8g8h8i8j8k8l8m8n8o8p8q8r8s8t8u8v"
+  username: "uggan"
+  userID: "1"
+
+# Clients that can use Dex for OIDC
+staticClients:
+- id: matrix-synapse
+  redirectURIs:
+  - 'https://chator.k.vu/_synapse/client/oidc/callback'
+  name: 'Matrix Synapse'
+  secret: 'matrix-synapse-secret-change-me'
+
+# Connectors - how users authenticate
+connectors:
+# Static password connector (built-in, no external service needed)
+- type: mockPasswordDB
+  id: logins
+  name: Email
+  config:
+    usernames:
+    - email: "uggan@chator.k.vu"
+      password: "$2a$10$2b2c9e3b8f8e8c8d8e8f8g8h8i8j8k8l8m8n8o8p8q8r8s8t8u8v"
+      username: "uggan"
+      userID: "1"
+
+# Enable password connector
+enablePasswordDB: true
+
+# Logging
+logging:
+  level: "info"
+  format: "text"

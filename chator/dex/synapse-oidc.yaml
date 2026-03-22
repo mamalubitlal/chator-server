@@ -1,0 +1,29 @@
+# Matrix Synapse OIDC Configuration for Dex
+# Add this to homeserver.yaml or include separately
+
+# OIDC Authentication via Dex
+oidc_providers:
+  - idp_id: dex
+    idp_name: "чатор Login"
+    idp_brand: "chator"
+    issuer: "https://auth.chator.k.vu"
+    client_id: "matrix-synapse"
+    client_secret: "matrix-synapse-secret-change-me"
+    scopes: ["openid", "profile", "email"]
+    user_mapping_provider:
+      config:
+        # Map OIDC claims to Matrix user attributes
+        localpart_template: "{{ user.preferred_username }}"
+        display_name_template: "{{ user.name }}"
+        email_template: "{{ user.email }}"
+    # Allow discovery of server name
+    discover: true
+    # Skip SSL verification for development (set false in production with valid certs)
+    skip_verification: false
+
+# Keep local registration enabled for admin fallback
+enable_registration: true
+
+# Optional: Require OIDC for new users (disable local registration later)
+# password_config:
+#   enabled: false

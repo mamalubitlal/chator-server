@@ -5,6 +5,7 @@ A Matrix-based chat app built as an alternative to Одноклассники fo
 **Stack:**
 - **Server:** Matrix Synapse (self-hosted on Render)
 - **Database:** Supabase PostgreSQL (free tier)
+- **Auth:** Dex OIDC (SSO with email/password, LDAP, GitHub, Google)
 - **Client:** Element Web (custom branded) + Element mobile apps
 - **Voice/Video:** Element Call (Jitsi - free, no setup needed)
 
@@ -127,12 +128,13 @@ Your logo is at: https://nopaste.net/chator
 ## Next Steps
 
 1. **Deploy server** on Render
-2. **Test login** with Element
-3. **Add logo** to Element Web
-4. **Invite beta users** (Russian teens)
-5. **Build mobile apps** (optional, see `mobile/README.md`)
-6. **Add bridges** (Telegram, VK) if needed
-7. **Scale** when you have users
+2. **Deploy Dex** for SSO (see `dex/README.md`)
+3. **Test login** with Element (OIDC SSO)
+4. **Add logo** to Element Web
+5. **Invite beta users** (Russian teens)
+6. **Build mobile apps** (optional, see `mobile/README.md`)
+7. **Add bridges** (Telegram, VK) if needed
+8. **Scale** when you have users
 
 ---
 
