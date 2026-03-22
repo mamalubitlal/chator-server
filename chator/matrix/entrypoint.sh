@@ -15,8 +15,14 @@ fi
 MACAROON_SECRET=$(cat "$MACAROON_KEY_FILE")
 export MACAROON_SECRET
 
-# Generate signing key if missing (32 bytes, base64 encoded for Synapse)
+# Delete old signing key to force regeneration (fixes "seed must be 32 bytes" error)
 SIGNING_KEY_FILE="$CONFIG_DIR/chator.signing.key"
+if [ -f "$SIGNING_KEY_FILE" ]; then
+    echo "🗑️  Deleting old signing key (will regenerate)..."
+    rm "$SIGNING_KEY_FILE"
+fi
+
+# Generate signing key if missing (32 bytes, base64 encoded for Synapse)
 if [ ! -f "$SIGNING_KEY_FILE" ]; then
     echo "Generating signing key..."
     # Generate 32 random bytes and format as Synapse signing key
