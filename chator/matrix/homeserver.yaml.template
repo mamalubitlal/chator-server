@@ -40,9 +40,19 @@ uploads_path: "${SYNAPSE_DATA_DIR}/uploads"
 
 # Registration - enable for initial setup, then disable
 enable_registration: true
+# Suppress verification warning for testing (add captcha/email verification later)
+enable_registration_without_verification: true
 
 # Report usage stats to Matrix.org (helps the project!)
 report_stats: "${SYNAPSE_REPORT_STATS:-yes}"
+
+# Macaroon secret key (auto-generated on first start)
+macaroon_secret_key: "${MACAROON_SECRET}"
+
+# Trusted key servers for federation
+trusted_key_servers:
+  - server_name: "matrix.org"
+suppress_key_server_warning: false
 
 # Metrics (optional, useful for monitoring)
 enable_metrics: true

@@ -6,12 +6,21 @@ CONFIG_DIR="/data"
 TEMPLATE="$CONFIG_DIR/homeserver.yaml.template"
 OUTPUT="$CONFIG_DIR/homeserver.yaml"
 
+# Generate macaroon secret key if missing
+MACAROON_KEY_FILE="$CONFIG_DIR/chator.macaroon.secret"
+if [ ! -f "$MACAROON_KEY_FILE" ]; then
+    echo "Generating macaroon secret key..."
+    openssl rand -hex 32 > "$MACAROON_KEY_FILE"
+fi
+MACAROON_SECRET=$(cat "$MACAROON_KEY_FILE")
+export MACAROON_SECRET
+
 # Check if homeserver.yaml already exists
 if [ ! -f "$OUTPUT" ]; then
     echo "Generating homeserver.yaml from template..."
     
     # Substitute environment variables
-    envsubst '${SYNAPSE_SERVER_NAME} ${SYNAPSE_REPORT_STATS} ${SYNAPSE_CONFIG_DIR} ${SYNAPSE_DATA_DIR} ${SUPABASE_DB_HOST} ${SUPABASE_DB_USER} ${SUPABASE_DB_PASSWORD} ${SUPABASE_DB_NAME}' < "$TEMPLATE" > "$OUTPUT"
+    envsubst '${SYNAPSE_SERVER_NAME} ${SYNAPSE_REPORT_STATS} ${SYNAPSE_CONFIG_DIR} ${SYNAPSE_DATA_DIR} ${SUPABASE_DB_HOST} ${SUPABASE_DB_USER} ${SUPABASE_DB_PASSWORD} ${SUPABASE_DB_NAME} ${MACAROON_SECRET}' < "$TEMPLATE" > "$OUTPUT"
     
     echo "Configuration generated successfully"
 else
