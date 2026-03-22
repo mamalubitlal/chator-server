@@ -25,11 +25,15 @@ fi
 # Generate signing key if missing (Synapse format: ed25519 <key_id> <base64>)
 if [ ! -f "$SIGNING_KEY_FILE" ]; then
     echo "Generating signing key..."
-    # Generate exactly 32 random bytes and encode as base64
-    # Format: ed25519 <key_id> <base64_key>
-    KEY_ID=$(head -c 4 /dev/urandom | base64 | tr -d '=+/' | head -c 4)
-    KEY_BYTES=$(head -c 32 /dev/urandom | base64 | tr -d '\n')
-    echo "ed25519 $KEY_ID $KEY_BYTES" > "$SIGNING_KEY_FILE"
+    # Use Python to generate proper 32-byte ed25519 key (guaranteed correct format)
+    python3 -c "
+import secrets
+import base64
+key_bytes = secrets.token_bytes(32)
+key_b64 = base64.b64encode(key_bytes).decode('ascii')
+key_id = base64.b64encode(secrets.token_bytes(3)).decode('ascii')[:4]
+print(f'ed25519 {key_id} {key_b64}')
+" > "$SIGNING_KEY_FILE"
 fi
 # Read the signing key and export for template
 SIGNING_KEY=$(cat "$SIGNING_KEY_FILE")
