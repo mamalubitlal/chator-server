@@ -25,10 +25,10 @@ fi
 # Generate signing key if missing (Synapse format: ed25519 <key_id> <base64>)
 if [ ! -f "$SIGNING_KEY_FILE" ]; then
     echo "Generating signing key..."
-    # Generate 32 random bytes and format as Synapse signing key
+    # Generate exactly 32 random bytes and encode as base64
     # Format: ed25519 <key_id> <base64_key>
-    KEY_ID=$(date +%s | sha256sum | base64 | head -c 4 | tr -d '=+')
-    KEY_BYTES=$(openssl rand -base64 32 | tr -d '\n')
+    KEY_ID=$(head -c 4 /dev/urandom | base64 | tr -d '=+/' | head -c 4)
+    KEY_BYTES=$(head -c 32 /dev/urandom | base64 | tr -d '\n')
     echo "ed25519 $KEY_ID $KEY_BYTES" > "$SIGNING_KEY_FILE"
 fi
 # Read the signing key and export for template
