@@ -1,0 +1,8 @@
+{
+  "m.homeserver": {
+    "base_url": "https://chator-server.loca.lt:8008"
+  },
+  "m.identity_server": {
+    "base_url": "https://chator-identity.loca.lt:8090"
+  }
+}

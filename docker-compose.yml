@@ -1,0 +1,23 @@
+services:
+  synapse:
+    image: chator:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: chator-synapse
+    network_mode: host
+    volumes:
+      - ./data:/data
+    extra_hosts:
+      - "db.parolaegtntaamnrxbqr.supabase.co:8.47.69.6"
+    environment:
+      - SYNAPSE_SERVER_NAME=chator.local
+      - SYNAPSE_REPORT_STATS=no
+      # Zapret DPI Bypass
+      - ZAPRET_ENABLED=true
+      - ZAPRET_REDETECT=true  # Run auto-detect on first run
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN
+    sysctls:
+      - net.ipv4.ip_forward=1

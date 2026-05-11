@@ -1,0 +1,8 @@
+{
+  "livekit": {
+    "urls": ["wss://chator-kittimamumavabratamav.loca.lt"],
+    "jg": {
+      "signing": "https://chator-cal.loca.lt:8070"
+    }
+  }
+}

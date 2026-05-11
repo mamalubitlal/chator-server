@@ -138,6 +138,15 @@ def make_pool(
     db_args = dict(db_config.config.get("args", {}))
     db_args.setdefault("cp_reconnect", True)
 
+    # Check if connecting to Supabase pooler (apply compatibility fixes only for Supabase)
+    host = db_args.get("host", "")
+    if "supabase" in host.lower() or "pooler" in host.lower():
+        # Supabase pooler: limit to single connection and cycle frequently
+        db_args.setdefault("cp_min", 0)
+        db_args.setdefault("cp_max", 1)
+        db_args.setdefault("cp_maxconnections", 1)
+        db_args.setdefault("cp_recycle", 30)
+
     def _on_new_connection(conn: Connection) -> None:
         # Ensure we have a logging context so we can correctly track queries,
         # etc.

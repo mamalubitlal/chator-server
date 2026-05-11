@@ -1,5 +1,5 @@
 # ignore everything by default
-*
+* 
 
 # things to include
 !docker
@@ -11,6 +11,13 @@
 !Cargo.lock
 !Cargo.toml
 !build_rust.py
+!dex.yaml.tpl
+!turnserver.conf
+!docker-entrypoint.sh
+!supervisord.conf
+!zapret
+!debug_synapse.py
+!.env.example
 
 rust/target
 synapse/*.so

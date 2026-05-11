@@ -143,19 +143,15 @@ recaptcha_siteverify_api: "https://www.google.com/recaptcha/api/siteverify"
 
 ## Turn ##
 
-{% if SYNAPSE_TURN_URIS %}
+# Free STUN servers (Google) - no TURN relay but helps NAT traversal
+# TURN relay requires external service (Open Relay Project or similar)
 turn_uris:
-{% for uri in SYNAPSE_TURN_URIS.split(',') %}    - "{{ uri }}"
-{% endfor %}
-turn_shared_secret: "{{ SYNAPSE_TURN_SECRET }}"
+  - "stun:stun.l.google.com:19302"
+  - "stun:stun1.l.google.com:19302"
+  - "stun:stun2.l.google.com:19302"
+turn_shared_secret: "chator_turn_secret_change_me"
 turn_user_lifetime: "1h"
 turn_allow_guests: True
-{% else %}
-turn_uris: []
-turn_shared_secret: "YOUR_SHARED_SECRET"
-turn_user_lifetime: "1h"
-turn_allow_guests: True
-{% endif %}
 
 ## Registration ##
 
@@ -200,3 +196,24 @@ trusted_key_servers:
 
 password_config:
    enabled: true
+
+## OIDC Configuration (for Dex integration)
+
+{% if SYNAPSE_OIDC_ENABLED %}
+oidc_providers:
+  - id: dex
+    issuer: "{{ SYNAPSE_OIDC_ISSUER }}"
+    client_id: "{{ SYNAPSE_OIDC_CLIENT_ID }}"
+    client_secret: "{{ SYNAPSE_OIDC_CLIENT_SECRET }}"
+    scopes:
+      - openid
+      - profile
+      - email
+    user_mapping_provider:
+      config:
+        localpart_template: "{{ "{{ user.name }}" }}"
+        display_name_template: "{{ "{{ user.name }}" }}"
+        email_template: "{{ "{{ user.email }}" }}"
+{% endif %}
+
+## Metrics ###

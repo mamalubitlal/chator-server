@@ -1,0 +1,90 @@
+# Docker Compose with Zapret DPI Bypass Integration
+# Run: docker-compose -f docker-compose.yml -f docker-compose.zapret.yml up -d
+#
+# This adds zapret container that routes blocked traffic through DPI bypass
+# Auto-detects best strategy on first run
+
+services:
+  zapret:
+    image: ghcr.io/bol-van/zapret/zapret:latest
+    container_name: chator-zapret
+    network_mode: host
+    volumes:
+      - ./zapret/lists:/opt/zapret/list:ro
+      - ./zapret/config:/opt/zapret/config
+    environment:
+      - TZ=UTC
+    cap_add:
+      - NET_ADMIN
+    sysctls:
+      - net.ipv4.conf.all.rp_filter=0
+      - net.ipv4.conf.default.rp_filter=0
+    restart: unless-stopped
+    # Run auto-detect on first start
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        echo "Starting Zapret DPI bypass..."
+        echo "Running auto-detection of best strategy..."
+        /opt/zapret/init.d/sysv/zapret stop 2>/dev/null || true
+
+        # Check current strategy from config
+        if [ -f /opt/zapret/config/strategy ]; then
+          STRATEGY=$(cat /opt/zapret/config/strategy)
+          echo "Using strategy: $STRATEGY"
+        else
+          # Default to FAKE TLS AUTO - works on most Russian ISPs
+          STRATEGY="FAKE_TLS_AUTO"
+          echo "$STRATEGY" > /opt/zapret/config/strategy
+          echo "Using default strategy: $STRATEGY"
+        fi
+
+        # Apply strategy
+        case "$STRATEGY" in
+          FAKE_TLS_AUTO)
+            cp /opt/zapret/config/strategy_fake_tls_auto.conf /opt/zapret/config/strategy.conf
+            ;;
+          FAKE_TLS_AUTO_ALT)
+            cp /opt/zapret/config/strategy_fake_tls_auto_alt.conf /opt/zapret/config/strategy.conf
+            ;;
+          SIMPLE_FAKE)
+            cp /opt/zapret/config/strategy_simple_fake.conf /opt/zapret/config/strategy.conf
+            ;;
+          ALT)
+            cp /opt/zapret/config/strategy_alt.conf /opt/zapret/config/strategy.conf
+            ;;
+          *)
+            cp /opt/zapret/config/strategy_fake_tls_auto.conf /opt/zapret/config/strategy.conf
+            ;;
+        esac
+
+        # Start zapret
+        /opt/zapret/init.d/sysv/zapret start
+        sleep 3
+
+        # Check if running
+        if pgrep -x "nfqws" > /dev/null || pgrep -x "tpws" > /dev/null; then
+          echo "Zapret is running!"
+          # Keep container alive
+          tail -f /dev/null
+        else
+          echo "Zapret failed to start, trying fallback..."
+          echo "ALT" > /opt/zapret/config/strategy
+          /opt/zapret/init.d/sysv/zapret stop 2>/dev/null || true
+          sleep 1
+          /opt/zapret/init.d/sysv/zapret start
+          tail -f /dev/null
+        fi
+
+  # Optional: DNS proxy (uncomment to use)
+  # dns-proxy:
+  #   image: ghcr.io/8hrsk/zapret-docker-proxy:latest
+  #   container_name: chator-zapret-dns
+  #   network_mode: host
+  #   volumes:
+  #     - ./zapret/lists:/opt/zapret/list:ro
+  #   environment:
+  #     - TZ=UTC
+  #   restart: unless-stopped
+
+networks: {}

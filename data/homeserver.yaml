@@ -1,0 +1,128 @@
+# Configuration file for Synapse.
+#
+# This is a YAML file: see [1] for a quick introduction. Note in particular
+# that *indentation is important*: all the elements of a list or dictionary
+# should have the same indentation.
+#
+# [1] https://docs.ansible.com/ansible/latest/reference_appendices/YAMLSyntax.html
+#
+# For more information on how to configure Synapse, including a complete accounting of
+# each option, go to docs/usage/configuration/config_documentation.md or
+# https://element-hq.github.io/synapse/latest/usage/configuration/config_documentation.html
+server_name: "chator.local"
+pid_file: /data/homeserver.pid
+reactor_name: select
+account_threepid_config:
+  identity_server: "localhost:8090"
+listeners:
+  - port: 8008
+    bind_addresses:
+      - 0.0.0.0
+    resources:
+    - compress: false
+      names:
+      - client
+      - federation
+    tls: false
+    type: http
+    x_forwarded: true
+database:
+  name: psycopg2
+  args:
+    host: 10.88.0.2
+    port: 5432
+    user: synapse
+    password: synapse
+    database: synapse
+    sslmode: disable
+    max_connections: 20
+    statement_timeout: 30000
+  allow_unsafe_locale: true
+enable_registration: true
+enable_registration_without_verification: true
+allow_guest_access: true
+log_config: "/data/chator.local.log.config"
+media_store_path: /data/media_store
+registration_shared_secret: "f66P&sZUFHz_1fW-ktRup~YEhkCHhR;g#DI,m~l9nwcVnD18Ng"
+report_stats: false
+macaroon_secret_key: "-7^oaPc~g4Up&=~kHDxCa~dCt&W*NuAntcbQ2y,fl+2gs7lcm:"
+form_secret: "2yHu6xCHDk68cYUde#lubOE817J=m3xTCa+=3&Vmi1Vn1OI7ba"
+signing_key_path: "/data/chator.local.signing.key"
+trusted_key_servers:
+  - server_name: "matrix.org"
+    suppress_key_server_warning: true
+
+
+# vim:ft=yaml
+# TURN/STUN servers (free public TURN from various sources)
+turn_uris:
+  - "stun:stun.l.google.com:19302"
+  - "stun:stun1.l.google.com:19302"
+  - "stun:stun2.l.google.com:19302"
+  - "stun:stun3.l.google.com:19302"
+  - "stun:stun4.l.google.com:19302"
+  - "turn:numb.viagenie.ca:3478"
+  - "turn:192.158.29.39:3478?transport=udp"
+  - "turn:192.158.29.39:3478?transport=tcp"
+  - "turn:turn.bistri.com:80"
+  - "turn:turn.anyfirewall.com:443?transport=tcp"
+turn_user_lifetime: "1h"
+turn_allow_guests: True
+
+# Experimental features for Element Call (MatrixRTC)
+experimental_features:
+  msc4140_enabled: true
+  msc4140_max_event_delay_duration: 24h
+  msc3266_enabled: true
+  msc4222_enabled: true
+
+# ============ RAM OPTIMIZATIONS ============
+
+# Cache tuning - reduces memory by 50-70%
+caches:
+  global_factor: 0.25
+  sync_response_cache_duration: 1m
+  expire_caches: true
+  cache_entry_ttl: 15m
+  cache_autotuning:
+    max_cache_memory_usage: 512M
+    target_cache_memory_usage: 384M
+    min_cache_ttl: 3m
+  per_cache_factors:
+    "*getEvent*": 0.5
+    "*getRoom*": 0.3
+
+# Reduce event cache size
+event_cache_size: 2500
+
+# Disable heavy features we don't need
+user_directory:
+  enabled: false
+
+stats: false
+
+# Media store limits
+max_image_pixels: 1048576
+max_animated_image_pixels: 262144
+
+# Presence - keeping this enabled as requested
+enable_presence: true
+
+# Presence-specific tuning
+presence:
+  enabled: true
+  include_offline_users_on_sync: false  # saves RAM on sync
+
+# Limit room history to reduce memory during sync
+default_room_version: "11"
+
+# Reduce federation cache
+federation:
+  max_concurrent: 100
+  max_queue_size: 100
+
+# Matrix Authentication Service (MAS) - internal
+matrix_authentication_service:
+  enabled: true
+  endpoint: "http://localhost:8090"
+  secret: "your-mas-secret-change-me"

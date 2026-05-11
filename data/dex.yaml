@@ -1,0 +1,39 @@
+# Dex configuration for Chator
+# Template - values replaced at runtime
+
+issuer: https://chator-auth.onrender.com
+web:
+  http: 0.0.0.0:5556
+  origins:
+    - https://chator-server.onrender.com
+
+storage:
+  type: sqlite3
+  config:
+    file: /data/dex.db
+
+logger:
+  level: info
+  format: json
+
+oauth2:
+  responseTypes: [id_token]
+  deviceResponseTypes: [device_code]
+  skipApprovalScreen: true
+  passwordConnector: local
+
+enablePasswordDB: true
+deviceFlow:
+  enabled: true
+
+staticClients:
+  - id: matrix-synapse
+    name: Matrix Synapse
+    redirectURIs:
+      - https://chator-server.onrender.com/_matrix/client/v3/login/oidc/callback
+    secret: matrix-synapse-secret-change-me
+
+staticPasswords:
+  - email: admin@chator.local
+    hash: $2b$12$EIJ3W2qXNJ31jFDe2lzFduCxbyjGPlTWXXp0WDYIYGjqo1JV4v.xy
+    username: admin

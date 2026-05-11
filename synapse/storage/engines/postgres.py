@@ -93,11 +93,23 @@ class PostgresEngine(
         db_conn: psycopg2.extensions.connection,
         allow_outdated_version: bool = False,
     ) -> None:
-        # Get the version of PostgreSQL that we're using. As per the psycopg2
-        # docs: The number is formed by converting the major, minor, and
-        # revision numbers into two-decimal-digit numbers and appending them
-        # together. For example, version 8.1.5 will be returned as 80105
-        self._version = db_conn.server_version
+        import time
+        
+        # Supabase pooler retry loop - connection may drop between checks
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                # Get the version of PostgreSQL
+                self._version = db_conn.server_version
+                break
+            except (psycopg2.InterfaceError, psycopg2.OperationalError) as e:
+                if attempt < max_retries - 1 and "closed" in str(e).lower():
+                    time.sleep(0.5)
+                    continue
+                raise
+        else:
+            raise RuntimeError("Failed to connect after retries")
+        
         allow_unsafe_locale = self.config.get("allow_unsafe_locale", False)
 
         # Are we on a supported PostgreSQL version?
