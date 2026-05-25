@@ -1,35 +1,35 @@
 services:
   coturn:
-    image: coturn/coturn:latest
+    image: instrumentisto/coturn:latest
     container_name: chator-turn
     network_mode: host
     volumes:
-      - ./turnserver.conf:/etc/coturn/turnserver.conf:ro
+      - ./turnserver.conf:/etc/turnserver.conf:ro
     restart: unless-stopped
-    environment:
-      - TURN_SERVER_NAME=chator.local
+    cap_add:
+      - NET_ADMIN
 
-  synapse:
+  chator:
     image: chator:latest
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: chator-synapse
-    network_mode: host
+    container_name: chator
+    ports:
+      - "8008:8008"
     volumes:
       - ./data:/data
     depends_on:
       - coturn
-    extra_hosts:
-      - "db.parolaegtntaamnrxbqr.supabase.co:8.47.69.6"
     environment:
-      - SYNAPSE_SERVER_NAME=chator.local
-      - SYNAPSE_REPORT_STATS=no
-      # Zapret DPI Bypass
-      - ZAPRET_ENABLED=true
-      - ZAPRET_REDETECT=true  # Run auto-detect on first run
+       - SYNAPSE_SERVER_NAME=chator.local
+       - SYNAPSE_REPORT_STATS=no
+       # Zapret DPI Bypass
+       - ZAPRET_ENABLED=false
+       - ZAPRET_REDETECT=true
     restart: unless-stopped
     cap_add:
       - NET_ADMIN
+    # Set ip_forward on host if needed for zapret
     sysctls:
       - net.ipv4.ip_forward=1

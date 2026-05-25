@@ -18,6 +18,7 @@
 !zapret
 !debug_synapse.py
 !.env.example
+!element-theme
 
 rust/target
 synapse/*.so

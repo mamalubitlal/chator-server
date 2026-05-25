@@ -1,5 +1,20 @@
+# Matrix ecosystem (Russia DPI bypass list)
 matrix.org
+matrix-client.matrix.org
 element.io
+element-web.apps.element.io
+# Infrastructure dependencies
+github.com
+docker.io
+pypi.org
+npmjs.org
+# Google (STUN servers, CDN)
 google.com
 stun.l.google.com
-github.com
+stun1.l.google.com
+# Fallback CDNs for Russia
+wget.la
+# Russian Matrix community servers
+ru-matrix.org
+# Public federation endpoint test
+federationtester.matrix.org

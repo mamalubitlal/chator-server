@@ -79,3 +79,7 @@ book/
 
 # Don't include users' poetry configs
 /poetry.toml
+
+# Database scripts with credentials
+check_db.py
+test_local_db.py

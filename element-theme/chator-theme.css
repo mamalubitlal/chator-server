@@ -1,0 +1,873 @@
+/* Chator custom theme overrides */
+/* Using system fonts (Inter is blocked by CSP: style-src 'self' 'unsafe-inline') */
+
+/* ========================================
+   LOGIN/REGISTER PAGE
+   ======================================== */
+
+/* Replace login page logo - hide original img, show via background */
+.mx_AuthHeaderLogo {
+    flex: 0 0 auto !important;
+    width: 100px !important;
+    height: 100px !important;
+    align-self: flex-start !important;
+    background-image: url("themes/element/img/logos/chator-logo.png");
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+.mx_AuthHeaderLogo img {
+    display: none !important;
+}
+
+/* Replace login/register page background */
+.mx_AuthPage {
+    background-image: url("themes/element/img/backgrounds/chator-bg.png") !important;
+    background-size: cover !important;
+    background-position: center !important;
+}
+
+.mx_AuthPage_modalBlur {
+    background-image: url("themes/element/img/backgrounds/chator-bg.png") !important;
+    background-size: cover !important;
+    background-position: center !important;
+}
+
+/* ========================================
+   WELCOME PAGE
+   ======================================== */
+
+/* Replace welcome page logo (mx_Logo) */
+.mx_Logo {
+    display: none !important;
+}
+a[href*="element.io"] img {
+    display: none !important;
+}
+a[href*="element.io"] {
+    display: inline-block !important;
+    width: 54px;
+    height: 54px;
+    background-image: url("themes/element/img/logos/chator-logo.png");
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+/* Replace "Element" with "Чатор" in welcome title */
+.mx_Header_title {
+    font-size: 0 !important;
+    line-height: 0 !important;
+}
+.mx_Header_title::before {
+    content: "Добро пожаловать в Чатор!";
+    font-size: 1.5rem;
+    line-height: normal;
+    white-space: nowrap;
+}
+
+/* ========================================
+   HIDE FOOTER (Blog, Twitter, GitHub, Matrix)
+   ======================================== */
+.mx_AuthFooter {
+    display: none !important;
+}
+
+/* ========================================
+   DISABLE SERVER CHANGING ON LOGIN PAGE
+   ======================================== */
+.mx_ServerPicker_change {
+    display: none !important;
+}
+.mx_ServerPicker_help {
+    display: none !important;
+}
+
+/* ========================================
+   AUTH PAGES THEME COLORS
+   ======================================== */
+
+/* Modal background - translucent white to match theme */
+.mx_AuthPage_modal {
+    background: rgba(255, 255, 255, 0.85) !important;
+}
+
+/* Primary/accent buttons */
+.mx_AccessibleButton_kind_primary {
+    background-color: #389cff !important;
+    border-color: #389cff !important;
+    color: #ffffff !important;
+}
+.mx_AccessibleButton_kind_primary:hover {
+    background-color: #1a7ae0 !important;
+}
+
+/* Links */
+.mx_AuthBody a,
+.mx_ServerPicker a {
+    color: #389cff !important;
+}
+
+/* Input fields */
+.mx_Field input,
+.mx_Field select,
+.mx_Field textarea {
+    border-color: #d4e4ff !important;
+}
+.mx_Field input:focus,
+.mx_Field select:focus,
+.mx_Field textarea:focus {
+    border-color: #389cff !important;
+    box-shadow: inset 0 0 0 1px #389cff !important;
+}
+
+/* Body background on welcome page */
+.mx_WelcomePage {
+    background: linear-gradient(135deg, #f0f6ff 0%, #ffffff 100%) !important;
+}
+
+/* ========================================
+   CHATOR CHAT EXPERIENCE THEME
+   ========================================
+   Настройка темы для общего интерфейса чата.
+   Переопределяет Element Compound Design System.
+   ======================================== */
+
+/* ------------------------------------------------------------------ */
+/* 1.  COMPOUND DESIGN TOKENS (CSS custom properties)                 */
+/*     Применяются к обоим классам темы, чтобы гарантированно          */
+/*     переопределить цвета на фирменные цвета Чатора.                */
+/* ------------------------------------------------------------------ */
+body.cpd-theme-light,
+body.cpd-theme-dark {
+    /* Canvas / overall page background */
+    --cpd-color-bg-canvas-default: #f0f6ff !important;
+
+    /* Layer backgrounds */
+    --cpd-color-bg-subtle-primary: #e8f0fe !important;
+    --cpd-color-bg-subtle-secondary: #f0f6ff !important;
+    --cpd-color-bg-layer-1: #ffffff !important;
+    --cpd-color-bg-layer-2: #f8faff !important;
+
+    /* Text colors */
+    --cpd-color-text-primary: #17191c !important;
+    --cpd-color-text-secondary: #656d77 !important;
+
+    /* Accent colours (Chator blue) */
+    --cpd-color-text-action-accent: #389cff !important;
+    --cpd-color-bg-action-accent: #389cff !important;
+    --cpd-color-bg-action-accent-rest: #389cff !important;
+    --cpd-color-bg-action-accent-hovered: #1a7ae0 !important;
+    --cpd-color-bg-action-accent-subtle: rgba(56, 156, 255, 0.1) !important;
+    --cpd-color-bg-action-accent-subtle-hovered: rgba(56, 156, 255, 0.15) !important;
+
+    /* Borders */
+    --cpd-color-border-interactive-default: #d4e4ff !important;
+    --cpd-color-border-interactive-hovered: #389cff !important;
+    --cpd-color-border-focused: #389cff !important;
+    --cpd-color-border-disabled: #cdd3da !important;
+
+    /* Icons */
+    --cpd-color-icon-primary: #17191c !important;
+    --cpd-color-icon-secondary: #656d77 !important;
+    --cpd-color-icon-tertiary: #818a95 !important;
+    --cpd-color-icon-accent: #389cff !important;
+
+    /* Critical / destructive */
+    --cpd-color-text-critical-primary: #d51928 !important;
+    --cpd-color-bg-critical-primary: #d51928 !important;
+
+    /* Success / online */
+    --cpd-color-text-success-primary: #0dbd8b !important;
+    --cpd-color-bg-success-primary: #0dbd8b !important;
+
+    /* Compound gray scale */
+    --cpd-color-gray-100: #f0f6ff !important;
+    --cpd-color-gray-200: #e8f0fe !important;
+    --cpd-color-gray-300: #d4e4ff !important;
+    --cpd-color-gray-400: #a0b8d9 !important;
+    --cpd-color-gray-500: #737b85 !important;
+    --cpd-color-gray-600: #656d77 !important;
+    --cpd-color-gray-700: #4c5158 !important;
+    --cpd-color-gray-800: #2e3138 !important;
+    --cpd-color-gray-900: #17191c !important;
+
+    /* Alpha utilities */
+    --cpd-color-alpha-gray-100: rgba(5, 38, 87, 0.04) !important;
+    --cpd-color-alpha-gray-200: rgba(5, 38, 87, 0.06) !important;
+    --cpd-color-alpha-gray-300: rgba(5, 38, 87, 0.08) !important;
+    --cpd-color-alpha-gray-400: rgba(5, 38, 87, 0.12) !important;
+    --cpd-color-alpha-gray-500: rgba(5, 38, 87, 0.16) !important;
+    --cpd-color-alpha-gray-600: rgba(5, 38, 87, 0.20) !important;
+    --cpd-color-alpha-gray-700: rgba(5, 38, 87, 0.24) !important;
+    --cpd-color-alpha-gray-800: rgba(5, 38, 87, 0.28) !important;
+    --cpd-color-alpha-gray-900: rgba(5, 38, 87, 0.36) !important;
+
+    /* Active background (used for selected room tiles etc.) */
+    --activeBackground-color: rgba(56, 156, 255, 0.12) !important;
+
+    /* Legacy background variable used by some sub-components */
+    --background: #f0f6ff !important;
+}
+
+/* ------------------------------------------------------------------ */
+/* 2.  SPACES PANEL (самая левая панель)                              */
+/*     Переопределяем жёстко заданный тёмный фон из theme-dark.css    */
+/* ------------------------------------------------------------------ */
+.mx_SpacePanel {
+    background: #ffffff !important;
+    border-right: 1px solid #e3e8f0 !important;
+}
+
+.mx_SpacePanel .mx_SpacePanel_toggleCollapse {
+    background: #e8f0fe !important;
+}
+
+.mx_SpacePanel .mx_SpacePanel_toggleCollapse::before {
+    background: #17191c !important;
+}
+
+/* Space buttons */
+.mx_SpacePanel .mx_SpaceButton.mx_SpaceButton_home .mx_SpaceButton_icon,
+.mx_SpacePanel .mx_SpaceButton.mx_SpaceButton_favourites .mx_SpaceButton_icon,
+.mx_SpacePanel .mx_SpaceButton.mx_SpaceButton_people .mx_SpaceButton_icon,
+.mx_SpacePanel .mx_SpaceButton.mx_SpaceButton_orphans .mx_SpaceButton_icon,
+.mx_SpacePanel .mx_SpaceButton.mx_SpaceButton_videoRooms .mx_SpaceButton_icon {
+    background: #e8f0fe !important;
+}
+
+.mx_SpacePanel .mx_SpaceButton.mx_SpaceButton_home .mx_SpaceButton_icon::before,
+.mx_SpacePanel .mx_SpaceButton.mx_SpaceButton_favourites .mx_SpaceButton_icon::before,
+.mx_SpacePanel .mx_SpaceButton.mx_SpaceButton_people .mx_SpaceButton_icon::before,
+.mx_SpacePanel .mx_SpaceButton.mx_SpaceButton_orphans .mx_SpaceButton_icon::before,
+.mx_SpacePanel .mx_SpaceButton.mx_SpaceButton_videoRooms .mx_SpaceButton_icon::before {
+    background: #389cff !important;
+}
+
+.mx_SpacePanel .mx_SpaceButton .mx_SpaceButton_toggleCollapse {
+    background: #e8f0fe !important;
+}
+
+/* Active space button */
+.mx_SpacePanel .mx_SpaceButton.mx_SpaceButton_active:not(.mx_SpaceButton_narrow) .mx_SpaceButton_selectionWrapper {
+    background: rgba(56, 156, 255, 0.15) !important;
+}
+
+/* Home button - make it blueish */
+.mx_SpacePanel .mx_SpaceButton.mx_SpaceButton_home {
+    background: rgba(56, 156, 255, 0.08) !important;
+    border-radius: 8px !important;
+}
+
+/* ------------------------------------------------------------------ */
+/* 3.  LEFT PANEL (список комнат)                                     */
+/* ------------------------------------------------------------------ */
+
+/* Wrapper */
+.mx_LeftPanel_wrapper {
+    background: #ffffff !important;
+}
+
+.mx_LeftPanel_outerWrapper {
+    background: #ffffff !important;
+    border-right: 1px solid #e3e8f0 !important;
+}
+
+/* User menu section */
+.mx_UserMenu {
+    background: #ffffff !important;
+    border-bottom: 1px solid #e8f0fe !important;
+}
+
+/* Quick settings button */
+.mx_QuickSettingsButton {
+    background: #ffffff !important;
+    border-top: 1px solid #e8f0fe !important;
+}
+
+/* Room search bar */
+.mx_RoomSearch {
+    background: #f0f6ff !important;
+    border: 1px solid #e8f0fe !important;
+    border-radius: 8px !important;
+}
+
+.mx_RoomSearch:focus-within {
+    border-color: #389cff !important;
+    box-shadow: 0 0 0 1px #389cff !important;
+}
+
+.mx_RoomSearch_icon {
+    color: #389cff !important;
+}
+
+/* ------------------------------------------------------------------ */
+/* 4.  ROOM LIST HEADERS & SUBLISTS                                   */
+/* ------------------------------------------------------------------ */
+
+.mx_RoomSublist_headerContainer {
+    background: #ffffff !important;
+}
+
+.mx_RoomSublist_headerContainer_sticky {
+    background: #ffffff !important;
+}
+
+.mx_RoomSublist_headerText {
+    color: #656d77 !important;
+    font-weight: 600 !important;
+}
+
+/* Room list header "add" plus button */
+.mx_RoomSublist_auxButton,
+.mx_RoomListHeader_plusButton {
+    color: #389cff !important;
+}
+
+.mx_RoomListHeader_contextMenuButton {
+    color: #389cff !important;
+}
+
+/* Dropdown / menu button on room sublist header */
+.mx_RoomSublist_menuButton {
+    color: #389cff !important;
+}
+
+/* ------------------------------------------------------------------ */
+/* 5.  ROOM TILES (отдельные комнаты в списке)                        */
+/* ------------------------------------------------------------------ */
+
+.mx_RoomTile {
+    background: transparent !important;
+    border-radius: 8px !important;
+    margin: 0px 7px 4px 8px !important;
+    padding: 4px !important;
+}
+
+.mx_RoomTile:hover {
+    background: rgba(56, 156, 255, 0.08) !important;
+}
+
+.mx_RoomTile_selected {
+    background: rgba(56, 156, 255, 0.12) !important;
+}
+
+.mx_RoomTile_selected:hover {
+    background: rgba(56, 156, 255, 0.16) !important;
+}
+
+.mx_RoomTile_title {
+    color: #17191c !important;
+}
+
+/* Notification badges */
+.mx_NotificationBadge {
+    background: #389cff !important;
+    color: #ffffff !important;
+}
+
+.mx_NotificationBadge_level_highlight {
+    background: #d51928 !important;
+    color: #ffffff !important;
+}
+
+/* Room tile notification bell / context button */
+.mx_RoomTile_notificationsButton {
+    color: #389cff !important;
+}
+
+.mx_RoomTile_menuButton {
+    color: #389cff !important;
+}
+
+/* ------------------------------------------------------------------ */
+/* 6.  ROOM HEADER (над списком сообщений)                            */
+/* ------------------------------------------------------------------ */
+
+.mx_LegacyRoomHeader_wrapper {
+    background: #ffffff !important;
+    border-bottom: 1px solid #e3e8f0 !important;
+    padding: 10px 20px 9px 16px !important;
+}
+
+.mx_LegacyRoomHeader_name {
+    color: #17191c !important;
+    font-weight: 600 !important;
+}
+
+.mx_LegacyRoomHeader_topic {
+    color: #656d77 !important;
+}
+
+.mx_LegacyRoomHeader_avatar:hover {
+    opacity: 0.8 !important;
+}
+
+/* Room header buttons (voice/video call, search, settings, etc.) */
+.mx_LegacyRoomHeader_button,
+.mx_LegacyRoomHeader_voiceCallButton,
+.mx_LegacyRoomHeader_videoCallButton,
+.mx_LegacyRoomHeader_searchButton {
+    color: #389cff !important;
+}
+
+/* Room header chevron */
+.mx_LegacyRoomHeader_chevron {
+    color: #389cff !important;
+}
+
+/* ------------------------------------------------------------------ */
+/* 7.  MAIN SPLIT / ROOM VIEW / TIMELINE                              */
+/* ------------------------------------------------------------------ */
+
+.mx_MainSplit {
+    background: #f8faff !important;
+}
+
+.mx_RoomView_wrapper {
+    background: #ffffff !important;
+}
+
+.mx_RoomView_body {
+    background: #ffffff !important;
+}
+
+.mx_RoomView_messagePanel {
+    background: #ffffff !important;
+}
+
+.mx_RoomView_messageListWrapper {
+    background: #ffffff !important;
+}
+
+/* Scroll panel within room view */
+.mx_ScrollPanel {
+    background: #ffffff !important;
+}
+
+/* Status area (bottom bar below messages, above composer) */
+.mx_RoomView_statusArea {
+    background: #ffffff !important;
+    border-top: 1px solid #e8f0fe !important;
+}
+
+.mx_RoomView_statusAreaBox {
+    background: #ffffff !important;
+}
+
+.mx_RoomView_statusAreaBox_line {
+    color: #656d77 !important;
+}
+
+/* ------------------------------------------------------------------ */
+/* 8.  EVENT TILES (сообщения в ленте)                                */
+/* ------------------------------------------------------------------ */
+
+.mx_EventTile {
+    background: transparent !important;
+}
+
+.mx_EventTile_line {
+    background: transparent !important;
+}
+
+/* Message bubble - incoming messages */
+.mx_EventTile .mx_EventTile_content {
+    color: #17191c !important;
+}
+
+/* Info line (sender, timestamp — for IRC-style layout) */
+.mx_EventTile_info {
+    background: transparent !important;
+}
+
+/* Message options hover area */
+.mx_EventTile_msgOption {
+    background: #ffffff !important;
+}
+
+/* Action bar below message (reply, react, edit, delete) */
+.mx_MessageActionBar {
+    background: #ffffff !important;
+    border: 1px solid #e3e8f0 !important;
+    border-radius: 8px !important;
+    box-shadow: 0 2px 8px rgba(5, 38, 87, 0.08) !important;
+}
+
+.mx_MessageActionBar_iconButton {
+    color: #389cff !important;
+}
+
+.mx_MessageActionBar_optionsButton {
+    color: #389cff !important;
+}
+
+/* Date separators ("today", "yesterday", etc.) */
+.mx_DateSeparator_dateContent {
+    background: #ffffff !important;
+    color: #656d77 !important;
+}
+
+/* Timeline separator (e.g. "You created this room") */
+.mx_TimelineSeparator {
+    color: #656d77 !important;
+}
+
+/* Generic event summaries (join/leave/name changes) */
+.mx_GenericEventListSummary_summary {
+    color: #656d77 !important;
+}
+
+.mx_GenericEventListSummary_toggle {
+    color: #389cff !important;
+}
+
+/* Textual events (join/leave messages) */
+.mx_TextualEvent {
+    color: #656d77 !important;
+}
+
+/* Crypto/encryption event tiles */
+.mx_cryptoEvent {
+    background: #f0f6ff !important;
+}
+
+.mx_cryptoEvent_icon {
+    color: #389cff !important;
+}
+
+/* E2E icon colours */
+.mx_E2EIcon_warning {
+    color: #389cff !important;
+}
+
+/* Read receipts */
+.mx_ReadReceiptGroup {
+    background: transparent !important;
+}
+
+.mx_ReadReceiptGroup_button {
+    color: #389cff !important;
+}
+
+/* Room Intro (empty room suggestions) */
+.mx_NewRoomIntro_buttons {
+    color: #389cff !important;
+}
+
+.mx_NewRoomIntro_inviteButton {
+    background: #389cff !important;
+    color: #ffffff !important;
+    border-radius: 8px !important;
+}
+
+.mx_NewRoomIntro_inviteButton:hover {
+    background: #1a7ae0 !important;
+}
+
+/* Room topic line */
+.mx_RoomTopic {
+    color: #656d77 !important;
+}
+
+/* ------------------------------------------------------------------ */
+/* 9.  MESSAGE COMPOSER (поле ввода сообщения)                        */
+/* ------------------------------------------------------------------ */
+
+.mx_MessageComposer {
+    background: #ffffff !important;
+}
+
+.mx_MessageComposer_wrapper {
+    background: #f8faff !important;
+    border: 1px solid #e3e8f0 !important;
+    border-radius: 8px !important;
+    margin: 0 16px 8px 16px !important;
+}
+
+.mx_MessageComposer_wrapper:focus-within {
+    border-color: #389cff !important;
+    box-shadow: 0 0 0 1px #389cff !important;
+}
+
+.mx_MessageComposer_row {
+    background: transparent !important;
+}
+
+/* The actual message input area */
+.mx_BasicMessageComposer_input {
+    color: #17191c !important;
+    background: transparent !important;
+}
+
+.mx_BasicMessageComposer_input::placeholder {
+    color: #818a95 !important;
+}
+
+/* Composer buttons (emoji, attachment, more options) */
+.mx_MessageComposer_button {
+    color: #389cff !important;
+}
+
+.mx_MessageComposer_button:hover {
+    color: #1a7ae0 !important;
+}
+
+.mx_MessageComposer_buttonMenu {
+    color: #389cff !important;
+}
+
+/* Upload area */
+.mx_MessageComposer_upload {
+    color: #389cff !important;
+}
+
+.mx_MessageComposer_upload:hover {
+    color: #1a7ae0 !important;
+}
+
+/* E2E icon in composer */
+.mx_MessageComposer_e2eIcon {
+    color: #389cff !important;
+}
+
+.mx_MessageComposer_e2eStatus {
+    color: #656d77 !important;
+}
+
+/* Format bar */
+.mx_MessageComposerFormatBar {
+    background: #ffffff !important;
+    border: 1px solid #e3e8f0 !important;
+    border-radius: 8px !important;
+    box-shadow: 0 2px 8px rgba(5, 38, 87, 0.08) !important;
+}
+
+.mx_MessageComposerFormatBar_button {
+    color: #389cff !important;
+}
+
+.mx_MessageComposerFormatBar_button:hover {
+    color: #1a7ae0 !important;
+}
+
+/* Send button (inside the SendMessageComposer) */
+.mx_SendMessageComposer {
+    background: transparent !important;
+}
+
+/* ------------------------------------------------------------------ */
+/* 10. RIGHT PANEL (детали комнаты, темы, файлы)                      */
+/* ------------------------------------------------------------------ */
+
+.mx_AuxPanel {
+    background: #ffffff !important;
+    border-left: 1px solid #e3e8f0 !important;
+}
+
+.mx_RightPanel_roomSummaryButton {
+    color: #389cff !important;
+}
+
+.mx_RightPanel_threadsButton {
+    color: #389cff !important;
+}
+
+.mx_RightPanel_roomSummaryButton:hover,
+.mx_RightPanel_threadsButton:hover {
+    color: #1a7ae0 !important;
+}
+
+/* Threads center button */
+.mx_ThreadsActivityCentreButton {
+    color: #389cff !important;
+}
+
+.mx_ThreadsActivityCentre_container {
+    background: #ffffff !important;
+    border-left: 1px solid #e3e8f0 !important;
+}
+
+/* ------------------------------------------------------------------ */
+/* 11. TOASTS, DIALOGS & POPUPS                                       */
+/* ------------------------------------------------------------------ */
+
+.mx_Toast_toast {
+    background: #ffffff !important;
+    border: 1px solid #e3e8f0 !important;
+    border-radius: 12px !important;
+    box-shadow: 0 4px 16px rgba(5, 38, 87, 0.12) !important;
+    color: #17191c !important;
+}
+
+.mx_Toast_title {
+    color: #17191c !important;
+}
+
+.mx_Toast_description {
+    color: #656d77 !important;
+}
+
+.mx_Toast_buttons {
+    background: transparent !important;
+}
+
+/* Verification session toast */
+.mx_Toast_icon_verification_warning {
+    color: #389cff !important;
+}
+
+/* Non-urgent toast (notifications) */
+.mx_NonUrgentToastContainer {
+    background: transparent !important;
+}
+
+/* ------------------------------------------------------------------ */
+/* 12. HIDE ELEMENT-FOOTER IN ROOM VIEW                               */
+/* ------------------------------------------------------------------ */
+
+/* Hide "Element" name references in chat area */
+.mx_LegacyRoomHeader_name:not([contenteditable]) {
+    /* Keep room name visible, only override color */
+}
+
+/* ------------------------------------------------------------------ */
+/* 13. SCROLLBAR THEMING                                              */
+/* ------------------------------------------------------------------ */
+
+.mx_AutoHideScrollbar::-webkit-scrollbar {
+    width: 6px !important;
+}
+
+.mx_AutoHideScrollbar::-webkit-scrollbar-track {
+    background: transparent !important;
+}
+
+.mx_AutoHideScrollbar::-webkit-scrollbar-thumb {
+    background: #d4e4ff !important;
+    border-radius: 3px !important;
+}
+
+.mx_AutoHideScrollbar::-webkit-scrollbar-thumb:hover {
+    background: #389cff !important;
+}
+
+/* ------------------------------------------------------------------ */
+/* 14. BADGE ON SPACE PANEL                                           */
+/* ------------------------------------------------------------------ */
+
+.mx_SpacePanel_badgeContainer .mx_NotificationBadge {
+    background: #389cff !important;
+}
+
+/* ------------------------------------------------------------------ */
+/* 15. RESIZE HANDLE                                                  */
+/* ------------------------------------------------------------------ */
+
+.mx_ResizeHandle {
+    background: #e3e8f0 !important;
+}
+
+.mx_ResizeHandle:hover {
+    background: #389cff !important;
+}
+
+/* ------------------------------------------------------------------ */
+/* 16. HOME/WELCOME PAGE UPDATES (остались внутри чата)               */
+/* ------------------------------------------------------------------ */
+
+.mx_UserOnboardingButton {
+    background: #ffffff !important;
+    border: 1px solid #e8f0fe !important;
+    border-radius: 12px !important;
+}
+
+.mx_UserOnboardingButton:hover {
+    border-color: #389cff !important;
+}
+
+.mx_UserOnboardingButton_close {
+    color: #389cff !important;
+}
+
+/* ------------------------------------------------------------------ */
+/* 17. AVATARS                                                        */
+/* ------------------------------------------------------------------ */
+
+.mx_BaseAvatar {
+    /* Avatars should keep their original styling */
+}
+
+/* Mini avatar uploader overlay */
+.mx_MiniAvatarUploader {
+    background: rgba(56, 156, 255, 0.8) !important;
+}
+
+.mx_MiniAvatarUploader_cameraIcon {
+    color: #ffffff !important;
+}
+
+/* ------------------------------------------------------------------ */
+/* 18. GENERAL LINK & BUTTON STYLING                                  */
+/* ------------------------------------------------------------------ */
+
+/* Links anywhere in the app */
+a, a:visited {
+    color: #389cff !important;
+}
+
+a:hover {
+    color: #1a7ae0 !important;
+}
+
+/* Danger outline buttons (leave room, etc.) */
+.mx_AccessibleButton_kind_danger_outline {
+    border-color: #d51928 !important;
+    color: #d51928 !important;
+}
+
+.mx_AccessibleButton_kind_danger_outline:hover {
+    background: rgba(213, 25, 40, 0.08) !important;
+}
+
+/* Link-inline kind (used in dialogs) */
+.mx_AccessibleButton_kind_link_inline {
+    color: #389cff !important;
+}
+
+.mx_AccessibleButton_kind_link_inline:hover {
+    color: #1a7ae0 !important;
+}
+
+/* ------------------------------------------------------------------ */
+/* 19. DECORATED ROOM AVATAR                                          */
+/* ------------------------------------------------------------------ */
+
+.mx_DecoratedRoomAvatar {
+    /* Ensure proper display */
+}
+
+/* ------------------------------------------------------------------ */
+/* 20. EXPLORE / PUBLIC ROOMS BUTTON (левая панель снизу)            */
+/* ------------------------------------------------------------------ */
+
+.mx_LeftPanel_exploreButton {
+    color: #389cff !important;
+    border-top: 1px solid #e8f0fe !important;
+}
+
+.mx_LeftPanel_exploreButton:hover {
+    color: #1a7ae0 !important;
+}
+
+/* ------------------------------------------------------------------ */
+/* 21. SPOTLIGHT / COMMAND PALETTE SEARCH                             */
+/* ------------------------------------------------------------------ */
+
+.mx_RoomSearch_spotlightTrigger {
+    background: #f0f6ff !important;
+}
+
+.mx_RoomSearch_spotlightTriggerText {
+    color: #656d77 !important;
+}

@@ -125,8 +125,9 @@ COPY --from=synapse-builder --exclude=.lock /install /usr/local
 ###############################################################################
 # Install Zapret DPI Bypass (for Russia)
 ###############################################################################
+# Reinstall passwd after multi-arch copy to fix useradd binary
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    iptables ipset curl git kmod \
+    iptables ipset curl git kmod passwd \
     && rm -rf /var/lib/apt/lists/*
 
 # Clone and build zapret
@@ -135,14 +136,13 @@ RUN git clone --depth 1 --branch master https://github.com/bol-van/zapret.git /o
     # Create user if not exists
     useradd -m -s /bin/false zapret 2>/dev/null || true
 
-# Copy custom domain list
+# Copy zapret config
 COPY ./zapret/lists/list-general-user.txt /opt/zapret/list/list-general-user.txt
-
-# Copy strategy configs
 COPY ./zapret/config/strategy_fake_tls_auto.conf /opt/zapret/config/strategy_fake_tls_auto.conf
 COPY ./zapret/config/strategy_fake_tls_auto_alt.conf /opt/zapret/config/strategy_fake_tls_auto_alt.conf
 COPY ./zapret/config/strategy_simple_fake.conf /opt/zapret/config/strategy_simple_fake.conf
 COPY ./zapret/config/strategy_alt.conf /opt/zapret/config/strategy_alt.conf
+COPY ./zapret/detect_blocked_domains.sh /usr/local/bin/detect-blocked.sh
 
 # Set default strategy
 RUN echo "FAKE_TLS_AUTO" > /opt/zapret/config/strategy && \
@@ -177,7 +177,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     wget \
     && rm -rf /var/lib/apt/lists/*
 
-ENV LIVEKIT_VERSION=1.11.0
+ENV LIVEKIT_VERSION=1.12.0
 # Using wget.la - fast GitHub mirror
 RUN for i in 1 2 3 4 5; do \
     wget --timeout=120 -q "https://wget.la/https://github.com/livekit/livekit/releases/download/v${LIVEKIT_VERSION}/livekit_${LIVEKIT_VERSION}_linux_amd64.tar.gz" -O /tmp/livekit.tar.gz && break || sleep 10; done && \
@@ -194,28 +194,149 @@ RUN for i in 1 2 3 4 5; do \
 
 ###############################################################################
 # Coturn Note: Install separately or use Docker image
-#  docker run -d --name coturn -p 3478:3478/tcp -p 3478:3478/udp \
+#  docker run -d --name coturn -p 3478:3478 -p 3478:3478/udp \
 #    -v /path/to/turnserver.conf:/etc/turnserver.conf coturn/coturn
 ###############################################################################
 
 ###############################################################################
-# Install Element Call (Node.js for Matrix calls)
+# Install Element Web (self-hosted Matrix client for Russia)
+# Users in Russia may not reach element.io — bundle our own
 ###############################################################################
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    nginx \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV ELEMENT_WEB_VERSION=1.11.70
+RUN for i in 1 2 3 4 5; do \
+    wget --timeout=120 -q "https://wget.la/https://github.com/vector-im/element-web/releases/download/v${ELEMENT_WEB_VERSION}/element-v${ELEMENT_WEB_VERSION}.tar.gz" -O /tmp/element-web.tar.gz && break || sleep 10; done && \
+    tar -xzf /tmp/element-web.tar.gz -C /tmp/ && \
+    mkdir -p /usr/share/element-web && \
+    cp -r /tmp/element-v${ELEMENT_WEB_VERSION}/* /usr/share/element-web/ && \
+    rm /tmp/element-web.tar.gz && \
+    rm -rf /tmp/element-v${ELEMENT_WEB_VERSION}
+
+# Configure Element Web to use local Synapse (updated at runtime for Render)
+RUN echo '{"default_server_config":{"m.homeserver":{"base_url":"http://localhost:8008","server_name":"localhost"}},"default_theme":"light","brand":"Чатор"}' > /usr/share/element-web/config.json
+
+# Chator theming: config, logo, background, and CSS overrides
+COPY element-theme/gen-config.py /tmp/gen-config.py
+RUN python3 /tmp/gen-config.py && rm /tmp/gen-config.py
+COPY element-theme/chator-logo.png /usr/share/element-web/themes/element/img/logos/chator-logo.png
+COPY element-theme/chator-bg.png /usr/share/element-web/themes/element/img/backgrounds/chator-bg.png
+COPY element-theme/chator-theme.css /usr/share/element-web/chator-theme.css
+# Inject custom CSS (with cache-busting) + theme override into index.html
+# Use build timestamp to prevent stale CSS caching
+# MutationObserver permanently forces light theme (survives Element theme detection)
+RUN BUILD_TS=$(date +%s) && sed -i "s|</head>|<link rel=\"stylesheet\" href=\"chator-theme.css?v=${BUILD_TS}\">\n<script>!function(){function r(){if(document.body){document.body.className='cpd-theme-light';new MutationObserver(function(){if(document.body.className!='cpd-theme-light'){document.body.className='cpd-theme-light'}}).observe(document.body,{attributes:true,attributeFilter:['class']})}else requestAnimationFrame(r)}r()}()<\/script>\n</head>|" /usr/share/element-web/index.html
+
+# Configure nginx to serve everything on one port (8008):
+#   / → Element Web, /call/ → Element Call
+#   /_matrix, /_synapse, /health → proxy to Synapse (internal port 8009)
+RUN echo 'server {\
+    listen 8008;\
+    server_name _;\
+    root /usr/share/element-web;\
+    index index.html;\
+    # Security headers\
+    add_header X-Frame-Options "SAMEORIGIN" always;\
+    add_header X-Content-Type-Options "nosniff" always;\
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;\
+    # GZIP for better perf under throttling\
+    gzip on;\
+    gzip_vary on;\
+    gzip_proxied any;\
+    gzip_comp_level 6;\
+    gzip_types text/plain text/css text/xml application/json application/javascript application/rss+xml application/atom+xml image/svg+xml;\
+    # Synapse API proxy (must be before static file locations)\
+    location /_matrix {\
+        proxy_pass http://localhost:8009;\
+        proxy_set_header X-Forwarded-For $remote_addr;\
+        proxy_set_header X-Forwarded-Proto $scheme;\
+        proxy_set_header Host $host;\
+    }\
+    location /_synapse {\
+        proxy_pass http://localhost:8009;\
+        proxy_set_header X-Forwarded-For $remote_addr;\
+        proxy_set_header X-Forwarded-Proto $scheme;\
+        proxy_set_header Host $host;\
+    }\
+    location /health {\
+        proxy_pass http://localhost:8009/health;\
+    }\
+    # Element Call\
+    location /call/ {\
+        alias /usr/share/element-call/;\
+        try_files $uri $uri/ /call/index.html;\
+    }\
+    # LiveKit JWT service proxy (Element Call uses this for call tokens)\
+    location /livekit/jwt/ {\
+        proxy_pass http://localhost:8070/;\
+        proxy_set_header Host $host;\
+        proxy_set_header X-Real-IP $remote_addr;\
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;\
+        proxy_set_header X-Forwarded-Proto $scheme;\
+    }\
+    # .well-known for Matrix client configuration (incl. Element Call discovery)\
+    location /.well-known/ {\
+        root /usr/share/element-web;\
+        add_header Access-Control-Allow-Origin "*" always;\
+        add_header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS" always;\
+        add_header Access-Control-Allow-Headers "X-Requested-With, Content-Type, Authorization" always;\
+        try_files $uri =404;\
+    }\
+    # Cache Element Web static assets\
+    location /themes/ {\
+        expires 7d;\
+        add_header Cache-Control "public, immutable";\
+    }\
+    location /assets/ {\
+        expires 7d;\
+        add_header Cache-Control "public, immutable";\
+    }\
+    # Catch-all: Element Web SPA\
+    location / {\
+        try_files $uri $uri/ /index.html;\
+    }\
+}' > /etc/nginx/sites-available/chator && \
+    ln -sf /etc/nginx/sites-available/chator /etc/nginx/sites-enabled/ && \
+    rm -f /etc/nginx/sites-enabled/default && \
+    echo "daemon off;" >> /etc/nginx/nginx.conf
+
+###############################################################################
+# Install cloudflared for DNS-over-HTTPS (Russia DPI bypass for DNS)
+###############################################################################
+ENV CLOUDFLARED_VERSION=2025.11.0
+RUN for i in 1 2 3 4 5; do \
+    wget --timeout=120 "https://wget.la/https://github.com/cloudflare/cloudflared/releases/download/${CLOUDFLARED_VERSION}/cloudflared-linux-amd64" -O /usr/local/bin/cloudflared && break || sleep 10; done && \
+    chmod +x /usr/local/bin/cloudflared
+
+###############################################################################
+# Install Element Call (pre-built release tarball)
+###############################################################################
+# Using pre-built release instead of building from source (avoids npm/pnpm deps)
+RUN set -eux; \
+    ELEMENT_CALL_VERSION="0.19.3"; \
+    wget --timeout=120 -q "https://github.com/element-hq/element-call/releases/download/v${ELEMENT_CALL_VERSION}/element-call-${ELEMENT_CALL_VERSION}.tar.gz" -O /tmp/element-call.tar.gz && \
+    mkdir -p /usr/share/element-call && \
+    tar -xzf /tmp/element-call.tar.gz -C /usr/share/element-call --strip-components=1 && \
+    rm -rf /tmp/element-call.tar.gz
+
+# Configure Element Call to use local services
+RUN echo '{"default_server_config":{"m.homeserver":{"base_url":"http://localhost:8008","server_name":"localhost"}},"livekit_jwt_service_url":"http://localhost:8008/livekit/jwt"}' > /usr/share/element-call/config.json
+
+# Fix absolute asset paths for sub-path hosting (/call/)
+# Element Call is served under /call/ to coexist with Element Web at root.
+# The Vite build generates absolute paths (/assets/..., /config.json) that
+# conflict with Element Web's assets at the same paths. Rewrite them to
+# use the /call/ prefix so they resolve correctly via the nginx alias.
+RUN find /usr/share/element-call -type f \( -name "*.html" -o -name "*.js" -o -name "*.css" \) \
+    -exec sed -i 's|/assets/|/call/assets/|g' {} + \
+    -exec sed -i 's|/config.json|/call/config.json|g' {} +
+
+# ============ Install Node.js for localtunnel ============
 RUN apt-get update && apt-get install -y --no-install-recommends \
     nodejs npm \
     && rm -rf /var/lib/apt/lists/*
-
-# Build Element Call from source
-RUN git clone --depth 1 --branch v1.0.0-alpha.12 https://github.com/element-hq/element-call.git /tmp/element-call && \
-    cd /tmp/element-call && \
-    npm ci && \
-    npm run build && \
-    mkdir -p /usr/share/element-call && \
-    cp -r dist/* /usr/share/element-call/ && \
-    cp -r public/* /usr/share/element-call/ 2>/dev/null || true
-
-# ============ Install Node.js for localtunnel ============
-# Node.js already installed above, reusing
 
 # Limit Node.js memory to prevent OOM during builds
 ENV NODE_OPTIONS="--max-old-space-size=512"
@@ -262,6 +383,15 @@ ENV DEX_ISSUER=${DEX_ISSUER:-https://chator-auth.onrender.com}
 ENV ZAPRET_ENABLED=${ZAPRET_ENABLED:-false}
 ENV ZAPRET_STRATEGY=${ZAPRET_STRATEGY:-FAKE_TLS_AUTO}
 
+# Enable registration by default
+ENV SYNAPSE_ENABLE_REGISTRATION=true
+
+# Local Coturn server (runs alongside in docker-compose)
+ENV COTURN_ENABLED=${COTURN_ENABLED:-true}
+
+# Public URL for Element Web config (set to https://your-app.onrender.com on Render)
+ENV SYNAPSE_PUBLIC_URL=${SYNAPSE_PUBLIC_URL:-http://localhost:8008}
+
 # ============ Copy entrypoint ============
 COPY docker-entrypoint.sh /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh
@@ -273,17 +403,13 @@ RUN git clone --depth 1 --branch v2.6.1 https://github.com/element-hq/sydent.git
     rm -rf /tmp/sydent
 
 # ============ Expose ports ============
-# 8008: Synapse Client API  
-# 8448: Synapse Federation API
-# 3478: Coturn TURN
-# 3479: Coturn TURN over TLS
-# 5556: Coturn TURN alt
-# 5557: Coturn TURN alt TLS
-# 8081: Element Call
-# 8082: Element Call (HTTPS)
-EXPOSE 8008/tcp 8448/tcp 3478/tcp 3479/tcp 5556/tcp 5557/tcp 8081/tcp 8090/tcp
+# 8008: Main entry point (nginx → Element Web + Element Call + Synapse proxy)
+# 7880: LiveKit SFU (WebRTC calls)
+# 8070: LiveKit JWT token service
+# 8090: Sydent Matrix Identity Server
+EXPOSE 8008/tcp 7880/tcp 8070/tcp 8090/tcp
 
-HEALTHCHECK --start-period=30s --interval=15s --timeout=5s \
+HEALTHCHECK --start-period=30s --interval=15s --timeout=10s \
     CMD curl -fSs http://localhost:8008/health || exit 1
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
