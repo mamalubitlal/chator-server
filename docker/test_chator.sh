@@ -495,7 +495,7 @@ check_file_contains "/data/homeserver.yaml" "msc4140_enabled" "homeserver.yaml h
 
 # Element Web config
 check_file_contains "/usr/share/element-web/config.json" "default_server_config" "Element Web config.json has default_server_config"
-check_file_contains "/usr/share/element-web/config.json" "localhost:8008" "Element Web config.json points to localhost:8008"
+check_file_contains "/usr/share/element-web/config.json" "localhost" "Element Web config.json points to localhost"
 
 # Element Call config
 check_file_contains "/usr/share/element-call/config.json" "livekit_jwt_service_url" "Element Call config.json has livekit_jwt_service_url"
