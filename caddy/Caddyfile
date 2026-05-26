@@ -1,0 +1,40 @@
+# Chator Caddy reverse proxy
+# Set CHATOR_DOMAIN env var to your domain (e.g. yourdomain.nip.io)
+# Then remove "tls internal" and Caddy auto-fetches Let's Encrypt certs.
+
+{$CHATOR_DOMAIN:localhost} {
+    # Self-signed TLS (remove this line when you have a real domain)
+    tls internal
+
+    # Security headers
+    header {
+        X-Forwarded-Proto https
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "SAMEORIGIN"
+    }
+
+    # Reverse proxy to the chator container (nginx on port 8008)
+    reverse_proxy chator:8008 {
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto https
+        header_up X-Forwarded-Host {host}
+    }
+}
+
+# Federation port — needed even without federation for proper Matrix spec compliance
+:8448 {
+    tls internal
+
+    reverse_proxy chator:8008 {
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto https
+    }
+}
+
+# HTTP redirect (catch-all, redirect to HTTPS)
+:80 {
+    redir https://{host}{uri} permanent
+}

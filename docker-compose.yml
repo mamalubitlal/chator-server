@@ -1,8 +1,17 @@
+volumes:
+  caddy_data:
+
 services:
   coturn:
     image: instrumentisto/coturn:latest
     container_name: chator-turn
-    network_mode: host
+    ports:
+      - "3478:3478/udp"
+      - "3478:3478/tcp"
+      - "3479:3479/udp"
+      - "3479:3479/tcp"
+      - "49160-49200:49160-49200/udp"
+      - "49160-49200:49160-49200/tcp"
     volumes:
       - ./turnserver.conf:/etc/turnserver.conf:ro
     restart: unless-stopped
@@ -23,6 +32,9 @@ services:
       - coturn
     environment:
        - SYNAPSE_SERVER_NAME=chator.local
+       - SYNAPSE_PUBLIC_URL=${CHATOR_PUBLIC_URL:-https://localhost}
+       - COTURN_ENABLED=true
+       - TURN_EXTERNAL_IP=${TURN_EXTERNAL_IP:-}
        - SYNAPSE_REPORT_STATS=no
        # Zapret DPI Bypass
        - ZAPRET_ENABLED=false
@@ -33,3 +45,17 @@ services:
     # Set ip_forward on host if needed for zapret
     sysctls:
       - net.ipv4.ip_forward=1
+
+  caddy:
+    image: dockerhub.timeweb.cloud/library/caddy:latest
+    container_name: chator-caddy
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8448:8448"
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+    restart: unless-stopped
+    depends_on:
+      - chator

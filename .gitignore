@@ -38,6 +38,9 @@ __pycache__/
 
 # For direnv users
 /.envrc
+
+# Local env / secrets
+/.env
 .direnv/
 
 # For nix/devenv users
@@ -83,3 +86,6 @@ book/
 # Database scripts with credentials
 check_db.py
 test_local_db.py
+
+# TURN test dependencies
+docker/turn-test/node_modules/
