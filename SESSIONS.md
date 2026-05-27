@@ -5,6 +5,34 @@
 
 ---
 
+## 2026-05-27 — FRP demultiplexer deployed on Render
+
+**Goal:** Make frps work on Render's single `$PORT` limitation.
+
+**Context:** Render web services expose only one port. FRP frps needs separate control + vhost ports. Solution: TCP demultiplexer that routes by HTTP path prefix.
+
+**Approach:**
+- Wrote `frp/demux.go` — Go TCP demux, listens on `$PORT`
+  - `GET /~!frp` (frpc WebSocket control) → frps control:7001
+  - Other HTTP (Matrix API) → frps vhost:8080
+  - `GET /` (Render health check) → 200 OK directly
+- Updated Dockerfile.frps with multi-stage Go build
+- Updated entrypoint.sh: frps bg + demux fg
+
+**Files created/modified:**
+- `frp/demux.go` — new, TCP demultiplexer
+- `frp/Dockerfile.frps` — multi-stage build
+- `frp/entrypoint.sh` — runs frps + demux
+- `.gitignore` — added `frp/demux.exe`
+- `SESSIONS.md` — appended this entry
+
+**Tooling:**
+- Render CLI: `C:\cli_2.18.0_windows_amd64\cli_v2.18.0.exe`
+
+**Status:** frps deployed and LIVE on Render. Health check passes (returns OK). Next: run frpc locally to establish tunnel.
+
+---
+
 ## 2026-05-27 — Fixed frpc profile bug, no strategy change
 
 **Goal:** Fix docker-compose profile mismatch for frpc service.
