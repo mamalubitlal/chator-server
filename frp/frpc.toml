@@ -1,0 +1,13 @@
+serverAddr = "chator-frp.onrender.com"
+serverPort = 443
+auth.token = "chator-frp-secret"
+transport.tls.enable = true
+transport.protocol = "websocket"
+loginFailExit = false
+
+[[proxies]]
+name = "web"
+type = "tcp"
+localIP = "caddy"
+localPort = 80
+remotePort = 8080

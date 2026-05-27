@@ -61,17 +61,16 @@ services:
     depends_on:
       - chator
 
-  # Wstunnel tunnel: connects to Render-hosted wstunnel (use: docker compose --profile frp up)
-  wstunnel:
+  # Frp client: connects to Render-hosted frps (use: docker compose --profile frp up)
+  frpc:
     build:
       context: ./frp
       dockerfile: Dockerfile.frpc
-    container_name: chator-wstunnel
+    container_name: chator-frpc
     profiles: ["frp"]
     environment:
       - FRP_SERVER=${FRP_SERVER:-chator-frp.onrender.com}
-      - TUNNEL_PATH=/tunnel
-      - REVERSE_PORT=8080
+      - AUTH_TOKEN=${AUTH_TOKEN:-chator-frp-secret}
     restart: unless-stopped
     depends_on:
       - caddy
@@ -79,8 +78,8 @@ services:
   # Cloudflare Tunnel (use: docker compose --profile tunnel up)
   cloudflared:
     image: cloudflare/cloudflared:latest
-    container_name: chator-tunnel
-    profiles: ["tunnel"]
+    container_name: chator-cloudflared
+    profiles: ["cloudflare"]
     command: tunnel --protocol http2 --url http://caddy:80
     environment:
       - TUNNEL_TRANSPORT_PROTOCOL=http2

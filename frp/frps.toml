@@ -1,0 +1,5 @@
+bindPort = 7001
+auth.token = "chator-frp-secret"
+log.to = "console"
+log.level = "info"
+detailedErrorsToClient = true

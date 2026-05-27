@@ -3,9 +3,9 @@ services:
     name: chator-frp
     runtime: docker
     repo: https://github.com/mamalubitlal/chator-server
-    dockerfilePath: ./frp/Dockerfile.frps
+    dockerfilePath: ./frp/Dockerfile
     dockerContext: ./frp
     envVars:
       - key: AUTH_TOKEN
         value: chator-frp-secret
-    healthCheckPath: /
+    healthCheckPath: /healthz

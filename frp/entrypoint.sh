@@ -2,18 +2,12 @@
 set -e
 
 PORT=${PORT:-10000}
-TUNNEL_SERVER_PORT=${TUNNEL_SERVER_PORT:-9999}
-REVERSE_PORT=${REVERSE_PORT:-8080}
 
-# Start wstunnel server in background
-# Accepts client tunnel connections via WebSocket upgrade on /tunnel path
-wstunnel server \
-    --restrict-http-upgrade-path-prefix /tunnel \
-    --log-lvl info \
-    ws://0.0.0.0:${TUNNEL_SERVER_PORT} &
+# Patch PORT into nginx config
+sed -i "s/listen PORT;/listen ${PORT};/" /etc/nginx/http.d/default.conf
 
-echo "entrypoint: wstunnel started on :${TUNNEL_SERVER_PORT}, reverse tunnel on :${REVERSE_PORT}"
+# Start frps in background
+frps -c /etc/frp/frps.toml &
 
-# Start demux on $PORT in foreground (keeps container alive)
-# Routes: /tunnel -> wstunnel, / -> health check 200, rest -> reverse tunnel :8080
-exec demux
+# Start nginx in foreground (keeps container alive)
+exec nginx -g 'daemon off;'
