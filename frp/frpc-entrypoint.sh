@@ -4,6 +4,7 @@ set -e
 FRP_SERVER=${FRP_SERVER:-chator-frp.onrender.com}
 AUTH_TOKEN=${AUTH_TOKEN:-chator-frp-secret}
 
+mkdir -p /etc/frp
 cat > /etc/frp/frpc.toml <<EOF
 serverAddr = "$FRP_SERVER"
 serverPort = 443
