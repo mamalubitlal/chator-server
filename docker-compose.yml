@@ -61,12 +61,26 @@ services:
     depends_on:
       - chator
 
-  # Tunnel profile: docker compose --profile tunnel up
+  # FRP tunnel: connects to Render-hosted frps
+  frpc:
+    build:
+      context: ./frp
+      dockerfile: Dockerfile.frpc
+    container_name: chator-frpc
+    profiles: ["tunnel"]
+    environment:
+      - FRP_SERVER=${FRP_SERVER:-chator-frp.onrender.com}
+      - AUTH_TOKEN=${FRP_AUTH_TOKEN:-chator-frp-secret}
+    restart: unless-stopped
+    depends_on:
+      - caddy
+
+  # Legacy cloudflared (remove after FRP verified)
   cloudflared:
     image: cloudflare/cloudflared:latest
     container_name: chator-tunnel
     profiles: ["tunnel"]
-    command: tunnel --protocol http2 --url http://caddy:80
+    command: tunnel --protocol quic --url http://caddy:80
     restart: unless-stopped
     depends_on:
       - caddy
