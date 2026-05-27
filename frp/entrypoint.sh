@@ -8,6 +8,7 @@ FRPS_VHOST_PORT=${FRPS_VHOST_PORT:-8080}
 
 mkdir -p /etc/frp
 cat > /etc/frp/frps.toml <<EOF
+bindAddr = "127.0.0.1"
 bindPort = $FRPS_CONTROL_PORT
 vhostHTTPPort = $FRPS_VHOST_PORT
 auth.token = "$AUTH_TOKEN"
