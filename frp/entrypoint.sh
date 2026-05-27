@@ -2,23 +2,18 @@
 set -e
 
 PORT=${PORT:-10000}
-AUTH_TOKEN=${AUTH_TOKEN:-chator-frp-secret}
-FRPS_CONTROL_PORT=${FRPS_CONTROL_PORT:-7001}
-FRPS_VHOST_PORT=${FRPS_VHOST_PORT:-8080}
+TUNNEL_SERVER_PORT=${TUNNEL_SERVER_PORT:-9999}
+REVERSE_PORT=${REVERSE_PORT:-8080}
 
-mkdir -p /etc/frp
-cat > /etc/frp/frps.toml <<EOF
-bindAddr = "127.0.0.1"
-bindPort = $FRPS_CONTROL_PORT
-vhostHTTPPort = $FRPS_VHOST_PORT
-auth.token = "$AUTH_TOKEN"
-log.to = "console"
-log.level = "info"
-detailedErrorsToClient = true
-EOF
+# Start wstunnel server in background
+# Accepts client tunnel connections via WebSocket upgrade on /tunnel path
+wstunnel server \
+    --restrict-http-upgrade-path-prefix /tunnel \
+    --log-lvl info \
+    ws://0.0.0.0:${TUNNEL_SERVER_PORT} &
 
-# Start frps in background
-frps -c /etc/frp/frps.toml &
+echo "entrypoint: wstunnel started on :${TUNNEL_SERVER_PORT}, reverse tunnel on :${REVERSE_PORT}"
 
 # Start demux on $PORT in foreground (keeps container alive)
+# Routes: /tunnel -> wstunnel, / -> health check 200, rest -> reverse tunnel :8080
 exec demux

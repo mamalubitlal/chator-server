@@ -2,26 +2,21 @@
 set -e
 
 FRP_SERVER=${FRP_SERVER:-chator-frp.onrender.com}
-AUTH_TOKEN=${AUTH_TOKEN:-chator-frp-secret}
+TUNNEL_PATH=${TUNNEL_PATH:-/tunnel}
+REVERSE_PORT=${REVERSE_PORT:-8080}
 
-mkdir -p /etc/frp
+# Wait for caddy to be ready
+echo "tunnel: waiting for caddy..."
+until wget -q -O /dev/null http://caddy:80/ 2>/dev/null; do
+    sleep 1
+done
+echo "tunnel: caddy is ready"
 
-# Render LB redirects port 80→443. frpc connects via TLS WebSocket to 443.
-# Render terminates TLS, forwards WebSocket upgrade to frps.
-cat > /etc/frp/frpc.toml <<EOF
-serverAddr = "$FRP_SERVER"
-serverPort = 443
-auth.token = "$AUTH_TOKEN"
-transport.tls.enable = true
-transport.protocol = "websocket"
-loginFailExit = false
-
-[[proxies]]
-name = "web"
-type = "http"
-localIP = "caddy"
-localPort = 80
-customDomains = ["$FRP_SERVER"]
-EOF
-
-exec frpc -c /etc/frp/frpc.toml
+# Wstunnel client reverse tunnel:
+# Connects to Render wstunnel server via WebSocket through Cloudflare
+# Server listens on :REVERSE_PORT, forwards traffic through tunnel to local caddy:80
+exec wstunnel client \
+    --http-upgrade-path-prefix "$TUNNEL_PATH" \
+    --tls-verify-certificate \
+    -R "tcp://${REVERSE_PORT}:caddy:80" \
+    wss://$FRP_SERVER

@@ -10,9 +10,11 @@ import (
 )
 
 const (
-	frpWebsocketPath = "/~!frp"
-	controlPort      = "7001"
-	httpPort         = "8080"
+	frpWebsocketPath  = "/~!frp"
+	tunnelUpgradePath = "/tunnel"
+	controlPort       = "7001"
+	httpPort          = "8080"
+	tunnelPort        = "9999"
 )
 
 func main() {
@@ -22,6 +24,7 @@ func main() {
 	}
 	ctrlPort := envOr("FRPS_CONTROL_PORT", controlPort)
 	vhostPort := envOr("FRPS_VHOST_PORT", httpPort)
+	tunPort := envOr("WSTUNNEL_PORT", tunnelPort)
 
 	ln, err := net.Listen("tcp", ":"+listenPort)
 	if err != nil {
@@ -29,7 +32,7 @@ func main() {
 		os.Exit(1)
 	}
 	defer ln.Close()
-	fmt.Fprintf(os.Stderr, "demux: listening :%s → control:%s http:%s\n", listenPort, ctrlPort, vhostPort)
+	fmt.Fprintf(os.Stderr, "demux: listening :%s → tunnel:%s vhost:%s\n", listenPort, tunPort, vhostPort)
 
 	for {
 		conn, err := ln.Accept()
@@ -37,7 +40,7 @@ func main() {
 			fmt.Fprintf(os.Stderr, "demux: accept: %v\n", err)
 			continue
 		}
-		go handle(conn, ctrlPort, vhostPort)
+		go handle(conn, ctrlPort, vhostPort, tunPort)
 	}
 }
 
@@ -48,7 +51,7 @@ func envOr(key, fallback string) string {
 	return fallback
 }
 
-func handle(client net.Conn, ctrlPort, vhostPort string) {
+func handle(client net.Conn, ctrlPort, vhostPort, tunPort string) {
 	defer client.Close()
 
 	br := bufio.NewReader(client)
@@ -67,13 +70,17 @@ func handle(client net.Conn, ctrlPort, vhostPort string) {
 		return
 	}
 
-	// Route to frps control or vhost HTTP
+	// Route: tunnel upgrade → wstunnel server, frp control → frps, rest → vhost
 	backendPort := vhostPort
-	if isFRPControl(line) {
+	switch {
+	case isTunnelUpgrade(line):
+		backendPort = tunPort
+		fmt.Fprintf(os.Stderr, "demux: -> tunnel:%s\n", tunPort)
+	case isFRPControl(line):
 		backendPort = ctrlPort
 		fmt.Fprintf(os.Stderr, "demux: -> control:%s\n", ctrlPort)
-	} else {
-		fmt.Fprintf(os.Stderr, "demux: -> http:%s\n", vhostPort)
+	default:
+		fmt.Fprintf(os.Stderr, "demux: -> vhost:%s\n", vhostPort)
 	}
 
 	backend, err := net.Dial("tcp", "127.0.0.1:"+backendPort)
@@ -112,4 +119,8 @@ func isHealthCheck(line string) bool {
 
 func isFRPControl(line string) bool {
 	return strings.Contains(line, frpWebsocketPath)
+}
+
+func isTunnelUpgrade(line string) bool {
+	return strings.Contains(line, tunnelUpgradePath)
 }

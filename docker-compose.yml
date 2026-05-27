@@ -61,16 +61,17 @@ services:
     depends_on:
       - chator
 
-  # FRP tunnel: connects to Render-hosted frps (use: docker compose --profile frp up)
-  frpc:
+  # Wstunnel tunnel: connects to Render-hosted wstunnel (use: docker compose --profile frp up)
+  wstunnel:
     build:
       context: ./frp
       dockerfile: Dockerfile.frpc
-    container_name: chator-frpc
+    container_name: chator-tunnel
     profiles: ["frp"]
     environment:
       - FRP_SERVER=${FRP_SERVER:-chator-frp.onrender.com}
-      - AUTH_TOKEN=${FRP_AUTH_TOKEN:-chator-frp-secret}
+      - TUNNEL_PATH=/tunnel
+      - REVERSE_PORT=8080
     restart: unless-stopped
     depends_on:
       - caddy
