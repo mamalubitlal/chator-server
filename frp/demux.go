@@ -57,8 +57,12 @@ func handle(client net.Conn, ctrlPort, vhostPort string) {
 		return
 	}
 
+	// Log the request line for debugging
+	fmt.Fprintf(os.Stderr, "demux: <- %s", strings.TrimRight(line, "\r\n"))
+
 	// Health check → respond 200 directly
 	if isHealthCheck(line) {
+		fmt.Fprintf(os.Stderr, "demux: health check, responding 200\n")
 		io.WriteString(client, "HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: close\r\n\r\nOK")
 		return
 	}
@@ -67,6 +71,9 @@ func handle(client net.Conn, ctrlPort, vhostPort string) {
 	backendPort := vhostPort
 	if isFRPControl(line) {
 		backendPort = ctrlPort
+		fmt.Fprintf(os.Stderr, "demux: -> control:%s\n", ctrlPort)
+	} else {
+		fmt.Fprintf(os.Stderr, "demux: -> http:%s\n", vhostPort)
 	}
 
 	backend, err := net.Dial("tcp", "127.0.0.1:"+backendPort)

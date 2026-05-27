@@ -6,12 +6,13 @@ AUTH_TOKEN=${AUTH_TOKEN:-chator-frp-secret}
 
 mkdir -p /etc/frp
 
-# Render LB terminates TLS. frpc connects via plain WebSocket to port 80.
-# Render forwards WebSocket upgrade to frps, tunnel established.
+# Render LB redirects port 80→443. frpc connects via TLS WebSocket to 443.
+# Render terminates TLS, forwards WebSocket upgrade to frps.
 cat > /etc/frp/frpc.toml <<EOF
 serverAddr = "$FRP_SERVER"
-serverPort = 80
+serverPort = 443
 auth.token = "$AUTH_TOKEN"
+transport.tls.enable = true
 transport.protocol = "websocket"
 loginFailExit = false
 
