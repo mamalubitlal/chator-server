@@ -1,3 +1,12 @@
+# Build wsproxy (TCP-to-WebSocket bridge with Origin header)
+FROM golang:alpine AS builder
+WORKDIR /build
+COPY wsproxy.go .
+RUN go mod init wsproxy && \
+    go mod tidy && \
+    CGO_ENABLED=0 go build -o /wsproxy .
+
+# Final frpc image
 FROM alpine:3.19
 RUN apk add --no-cache ca-certificates
 ARG FRP_VERSION=0.61.0
@@ -5,8 +14,7 @@ ADD https://github.com/fatedier/frp/releases/download/v${FRP_VERSION}/frp_${FRP_
 RUN cd /tmp && tar xzf frp_${FRP_VERSION}_linux_amd64.tar.gz \
     && mv frp_${FRP_VERSION}_linux_amd64/frpc /usr/local/bin/ \
     && rm -rf /tmp/frp*
-# Patch WebSocket path from /~!frp → /frpws (Cloudflare blocks /~!frp)
-RUN sed -i 's|/~!frp|/frpws|g' /usr/local/bin/frpc
+COPY --from=builder /wsproxy /usr/local/bin/wsproxy
 COPY frpc.toml /etc/frp/frpc.toml
 COPY frpc-entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh

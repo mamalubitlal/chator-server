@@ -1,8 +1,10 @@
-serverAddr = "chator-frp.onrender.com"
-serverPort = 443
+# This is used as static fallback.
+# In production, frpc-entrypoint.sh generates the config dynamically.
+serverAddr = "127.0.0.1"
+serverPort = 7002
 auth.token = "chator-frp-secret"
-transport.tls.enable = true
-transport.protocol = "websocket"
+transport.tls.enable = false
+transport.protocol = "tcp"
 loginFailExit = false
 
 [[proxies]]
