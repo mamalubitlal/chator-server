@@ -4,6 +4,7 @@ set -e
 PORT=${PORT:-10000}
 AUTH_TOKEN=${AUTH_TOKEN:-chator-frp-secret}
 
+mkdir -p /etc/frp
 cat > /etc/frp/frps.toml <<EOF
 bindPort = $PORT
 vhostHTTPPort = $PORT
