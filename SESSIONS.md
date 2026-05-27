@@ -5,6 +5,81 @@
 
 ---
 
+## 2026-05-28 — Fix Cloudflare WS block: wsproxy (Go TCP→WebSocket bridge with Origin header)
+
+**Goal:** Make frpc WebSocket connection work through Cloudflare's WAF (blocked without Origin header).
+
+**Context:** Cloudflare in front of `*.onrender.com` returns 403 on WebSocket upgrades unless `Origin` header is present. frpc's gorilla/websocket doesn't set Origin; frp has no config option for custom WS headers. The previous `/~!frp` → `/frpws` binary sed-patch path renaming didn't help.
+
+**Approach:**
+- Discovered the root cause: `curl -H "Origin: https://chator-frp.onrender.com"` succeeds (101 Switching Protocols), without it → 403
+- Built `frp/wsproxy.go` — tiny Go TCP-to-WebSocket bridge:
+  - Listens on `:7002`
+  - On TCP connect, dials `wss://chator-frp.onrender.com/frpws` with `Origin` header
+  - Bidirectional raw TCP ↔ WebSocket binary frames relay
+- Changed frpc transport from `websocket` back to `tcp`, pointing to `127.0.0.1:7002`
+- Multi-stage Dockerfile: compiles wsproxy (Go), copies alongside stock frpc
+- No more `sed` patching of the binary — wsproxy handles `/~!frp` path via `/frpws` in target URL
+- Render side unchanged (nginx.conf already had `/frpws` location)
+
+**Architecture:**
+```
+frpc (TCP) → wsproxy:7002 (adds Origin header, WS upgrade) → Render nginx → frps:7001
+```
+
+**Files created:**
+- `frp/wsproxy.go` — Go TCP-to-WebSocket bridge with `-origin` flag
+
+**Files modified:**
+- `frp/Dockerfile.frpc` — multi-stage build (golang:alpine builder + alpine final)
+- `frp/frpc.toml` — TCP transport, `serverAddr = "127.0.0.1"`, `serverPort = 7002`
+- `frp/frpc-entrypoint.sh` — starts wsproxy in background, generates frpc config for local TCP
+
+**Key decisions:**
+- Custom code IS justified here — it's a 90-line Go bridge that adds Origin header, which frp doesn't support natively. Runs locally on home server, not on Render
+- Multi-stage Docker build keeps final image small (Go binary ~7MB static)
+- wsproxy is generic: `-listen`, `-target`, `-origin` flags. Could be used for other Cloudflare-gated WebSocket connections
+
+**Status:** Done. Tunnel verified:
+- frpc logs: `login to server success, get run id [...]`
+- Endpoint: `GET /` → **200 OK**, serves Element Matrix client homepage
+- Full pipeline: Browser → Cloudflare → Render nginx → frps → wsproxy:7002 → frpc → caddy:80 → Element
+
+---
+
+## 2026-05-28 — Fix Render deploy (Dockerfile path) + verify live
+
+**Goal:** Get the stock FRP + nginx commit deployed after it failed due to stale Render config.
+
+**Context:** Commit `dd3278109` was pushed but auto-deploy failed. Render's service config still pointed to deleted `Dockerfile.frps`. ISP was blocking `api.render.com` but later came back.
+
+**Approach:**
+- Refreshed Render CLI connection (ISP was blocking, now works)
+- Found auto-deploy failed: `dockerfilePath: Dockerfile.frps` but file was deleted
+- Updated Render service via REST API:
+  - `envSpecificDetails.dockerfilePath`: `Dockerfile.frps` → `Dockerfile`
+  - `healthCheckPath`: `` → `/healthz`
+  - Used API key from `~/.render/cli.yaml`
+- Triggered manual deploy — **build passed, service LIVE**
+
+**Verified endpoints:**
+- `GET /healthz` → **200** (nginx)
+- `GET /~!frp` → **400** (frps control, expects WebSocket — correct)
+- `GET /` → **502** (nginx→frps:8080, expected — no frpc registered yet)
+
+**Current live deploy:** `dep-d8bj0lbj0mlc738vs3s0` (built at 17:57:08)
+
+**Key decisions:**
+- Render CLI has no `--dockerfile-path` flag on `services update`
+- Had to PATCH `envSpecificDetails.dockerfilePath` directly via API
+- Health check path set to `/healthz` (nginx handles it before proxy_pass)
+- `buildPlan: starter` shows in API (Render internal default for free tier tests) — not changed
+
+**Status:** Server side done. Wait for user to configure frpc on home server:
+`docker compose --profile frp up -d`
+
+---
+
 ## 2026-05-28 — Restore stock FRP with nginx on Render
 
 **Goal:** Replace wstunnel+demux custom stack with stock FRP (fatedier/frp). Fix WebSocket upgrade failures by using nginx for routing instead of custom Go demux.
