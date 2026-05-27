@@ -10,8 +10,9 @@ services:
       - "3478:3478/tcp"
       - "3479:3479/udp"
       - "3479:3479/tcp"
-      - "49160-49200:49160-49200/udp"
-      - "49160-49200:49160-49200/tcp"
+      - "5556:5556/udp"
+      - "5556:5556/tcp"
+      - "49160-49180:49160-49180/udp"
     volumes:
       - ./turnserver.conf:/etc/turnserver.conf:ro
     restart: unless-stopped
@@ -59,3 +60,13 @@ services:
     restart: unless-stopped
     depends_on:
       - chator
+
+  # Tunnel profile: docker compose --profile tunnel up
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: chator-tunnel
+    profiles: ["tunnel"]
+    command: tunnel --protocol http2 --url http://caddy:80
+    restart: unless-stopped
+    depends_on:
+      - caddy

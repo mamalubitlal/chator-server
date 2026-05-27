@@ -6,26 +6,22 @@
         "ghcr.io/devcontainers/features/node:1": {},
         "ghcr.io/devcontainers/features/python:1": {}
     },
-    "forwardPorts": [8008, 3478, 3479, 80, 443, 8448],
+    "forwardPorts": [80, 443, 3478, 8008, 8448],
     "portsAttributes": {
-        "8008": {
-            "label": "Synapse (Chator)",
-            "onAutoForward": "notify"
-        },
-        "3478": {
-            "label": "TURN",
-            "onAutoForward": "notify"
-        },
-        "3479": {
-            "label": "TURN TLS",
-            "onAutoForward": "notify"
-        },
         "80": {
-            "label": "HTTP",
-            "onAutoForward": "notify"
+            "label": "HTTP (Element Web)",
+            "onAutoForward": "openBrowser"
         },
         "443": {
-            "label": "HTTPS",
+            "label": "HTTPS (Element Web)",
+            "onAutoForward": "openBrowser"
+        },
+        "3478": {
+            "label": "TURN/STUN",
+            "onAutoForward": "notify"
+        },
+        "8008": {
+            "label": "Synapse API",
             "onAutoForward": "notify"
         },
         "8448": {
@@ -33,12 +29,8 @@
             "onAutoForward": "notify"
         }
     },
-    "remoteEnv": {
-        "CHATOR_PUBLIC_URL": "https://localhost",
-        "COTURN_ENABLED": "true"
-    },
-    "postCreateCommand": "docker compose build",
-    "postStartCommand": "docker compose up -d",
+    "postCreateCommand": "git update-index --chmod=+x .devcontainer/setup.sh && bash .devcontainer/setup.sh",
+    "postStartCommand": "bash .devcontainer/setup.sh",
     "customizations": {
         "vscode": {
             "extensions": [

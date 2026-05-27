@@ -2,6 +2,10 @@
 # Set CHATOR_DOMAIN env var to your domain (e.g. yourdomain.nip.io)
 # Then remove "tls internal" and Caddy auto-fetches Let's Encrypt certs.
 
+{
+    auto_https disable_redirects
+}
+
 {$CHATOR_DOMAIN:localhost} {
     # Self-signed TLS (remove this line when you have a real domain)
     tls internal
@@ -34,7 +38,12 @@
     }
 }
 
-# HTTP redirect (catch-all, redirect to HTTPS)
-:80 {
-    redir https://{host}{uri} permanent
+# Catch-all port 80 — serve directly (Cloudflare Tunnel TLS is at edge)
+http://:80 {
+    reverse_proxy chator:8008 {
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto https
+        header_up X-Forwarded-Host {host}
+    }
 }
