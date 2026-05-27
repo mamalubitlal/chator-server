@@ -5,15 +5,35 @@
 
 ---
 
-## 2026-05-27 — Chator FRP tunnel + Render deployment
+## 2026-05-27 — Fixed frpc profile bug, no strategy change
 
-**Goal:** Deploy Chator (Matrix/Element/TURN) server publicly accessible despite ISP blocking all inbound traffic + throttling persistent HTTP/2 outbound.
+**Goal:** Fix docker-compose profile mismatch for frpc service.
 
-**Context:** ISP (Russian residential) blocks all inbound TCP/UDP, throttles persistent HTTP/2 (Cloudflare tunnel dropped ~40s), and blocks api.github.com (Codespaces unreachable).
+**Context:** frpc had `profiles: ["tunnel"]` but the session log said it should be `profiles: ["frp"]` to be exclusive from cloudflared. Cloudflared comment called it "Legacy" prematurely.
 
-**Approach:** FRP tunnel — lightweight frps (~10MB) on Render free tier (512MB RAM, no CC), frpc locally connects outbound via WebSocket-over-HTTPS. ISP cannot block outbound.
+**Approach:** Changed frpc profile to `["frp"]`, removed "Legacy" comment from cloudflared. No tunnel strategy changes.
 
-**Files created:**
+**Files modified:**
+- `docker-compose.yml` — frpc profile fix + cloudflared comment cleanup
+- `SESSIONS.md` — added this entry
+
+**Key decisions:**
+- Leave render.yaml healthCheckPath as-is for now
+- No tunnel strategy change until user decides direction
+
+**Status:** done. User was presented with 4 options (cloudflared HTTP/2, TCP demux on Render, cheap VPS, or fix bugs only). Chose D — fix bugs only.
+
+---
+
+## 2026-05-27 — Chator FRP tunnel + Render deployment + persistence
+
+**Goal:** Deploy Chator publicly accessible + set up persistent session memory.
+
+**Context:** ISP blocks all inbound, throttles HTTP/2 outbound, blocks api.github.com. No free hosting with CC-free signup found.
+
+**Approach:** FRP tunnel (frps on Render free tier, frpc local via WebSocket). SESSIONS.md for cross-session memory.
+
+**Files created/modified:**
 - `frp/Dockerfile.frps` — frps for Render, entrypoint generates config from `$PORT`
 - `frp/Dockerfile.frpc` — frpc with dynamic env-var-based config
 - `frp/entrypoint.sh` — generates frps.toml (`bindPort`=`vhostHTTPPort`=`$PORT`)
@@ -21,15 +41,17 @@
 - `render.yaml` — Render blueprint
 - `docker-compose.yml` — added frpc service (tunnel profile)
 - `.env.example` — added `FRP_SERVER`, `FRP_AUTH_TOKEN`
-- `.devcontainer/setup.sh` — Codespace auto-config (unused, ISP blocks API)
+- `.devcontainer/setup.sh` — Codespace auto-config (ISP blocks API)
+- `SESSIONS.md` (new) — persistent session log in repo root
+- `~/.config/opencode/AGENTS.md` — added SESSIONS.md maintenance protocol
 
 **Key decisions:**
 - frps uses same port for control + HTTP (`bindPort = vhostHTTPPort = $PORT`)
-- frpc uses `transport.protocol = "websocket"` + `transport.tls.enable = true` to work through Render's LB
-- Local cloudflared kept as QUIC fallback (tunnel profile)
-- Caddy `auto_https disable_redirects` for tunnel compatibility
+- frpc uses WebSocket + TLS to traverse Render's LB
+- SESSIONS.md in repo root (not gitignored), updated on session compaction
+- AGENTS.md instructs all agents to append to SESSIONS.md automatically
 
-**Status:** Configured and pushed to GitHub. User needs to deploy frps on Render, update `FRP_SERVER` locally, run `docker compose --profile tunnel up -d frpc`.
+**Status:** FRP configured on GitHub. SESSIONS.md protocol active. Next: deploy frps on Render.
 
 ---
 

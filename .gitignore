@@ -87,5 +87,8 @@ book/
 check_db.py
 test_local_db.py
 
+# FRP demux local build artifact
+frp/demux.exe
+
 # TURN test dependencies
 docker/turn-test/node_modules/
