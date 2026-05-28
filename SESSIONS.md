@@ -1,268 +1,90 @@
-# Session Log
+# Sessions
 
-> Accumulated session summaries. Updated on compaction/end-of-session.
-> Newest entries at top.
+## 2026-05-29 — Full HTTPS setup, Element Web/Call at chator.duckdns.org
 
----
-
-## 2026-05-28 — Fix Cloudflare WS block: wsproxy (Go TCP→WebSocket bridge with Origin header)
-
-**Goal:** Make frpc WebSocket connection work through Cloudflare's WAF (blocked without Origin header).
-
-**Context:** Cloudflare in front of `*.onrender.com` returns 403 on WebSocket upgrades unless `Origin` header is present. frpc's gorilla/websocket doesn't set Origin; frp has no config option for custom WS headers. The previous `/~!frp` → `/frpws` binary sed-patch path renaming didn't help.
-
+**Goal:** Serve Chator (Matrix + LiveKit) at `chator.duckdns.org` with HTTPS, working chat registration and voice/video calls
+**Context:** VPS at 85.209.2.14, Debian 13 Trixie, bare-metal (no Docker). Supabase PostgreSQL pooler. DuckDNS for dynamic DNS.
 **Approach:**
-- Discovered the root cause: `curl -H "Origin: https://chator-frp.onrender.com"` succeeds (101 Switching Protocols), without it → 403
-- Built `frp/wsproxy.go` — tiny Go TCP-to-WebSocket bridge:
-  - Listens on `:7002`
-  - On TCP connect, dials `wss://chator-frp.onrender.com/frpws` with `Origin` header
-  - Bidirectional raw TCP ↔ WebSocket binary frames relay
-- Changed frpc transport from `websocket` back to `tcp`, pointing to `127.0.0.1:7002`
-- Multi-stage Dockerfile: compiles wsproxy (Go), copies alongside stock frpc
-- No more `sed` patching of the binary — wsproxy handles `/~!frp` path via `/frpws` in target URL
-- Render side unchanged (nginx.conf already had `/frpws` location)
-
-**Architecture:**
-```
-frpc (TCP) → wsproxy:7002 (adds Origin header, WS upgrade) → Render nginx → frps:7001
-```
-
-**Files created:**
-- `frp/wsproxy.go` — Go TCP-to-WebSocket bridge with `-origin` flag
-
+- Obtained LE wildcard cert via DNS-01 (certbot-dns-duckdns), cron for DuckDNS auto-update every 5 min
+- Fixed nginx to proxy HTTPS → Synapse (port 8009), LiveKit (/livekit → 7880), Element Call (/call/ → static files)
+- Changed `server_name` from `localhost` → `chator.duckdns.org` in homeserver.yaml, env, start.sh — required full DB schema reset (dropped 173 tables)
+- Configured LiveKit: `use_external_ip: true`, `external_ip: 85.209.2.14`, TURN with local coturn, fixed YAML syntax
+- Updated lk-jwt-service to use `ws://localhost:7880` (not render.com tunnel)
+- Set coturn realm to `chator.duckdns.org`
+- Fixed Element Call asset path corruption (idempotent sed: revert-then-apply in deploy.sh)
+- Killed stale coturn process, cleaned up temp files
+- Verified: registration open, Element Web works via browser, all endpoints return 200 from external
 **Files modified:**
-- `frp/Dockerfile.frpc` — multi-stage build (golang:alpine builder + alpine final)
-- `frp/frpc.toml` — TCP transport, `serverAddr = "127.0.0.1"`, `serverPort = 7002`
-- `frp/frpc-entrypoint.sh` — starts wsproxy in background, generates frpc config for local TCP
-
+- `deploy/deploy.sh` — Element Call asset fix made idempotent (revert first, then apply)
+- `deploy/conf/homeserver.yaml` — server_name, turn_uris
+- `docker/livekit.conf` — external IP, TURN, YAML fix
+- `deploy/start.sh` — server_name
+- `/etc/chator/env` — PUBLIC_IP added
+- `/etc/turnserver.conf` — realm
+- `/etc/supervisor/supervisord.conf` — LIVEKIT_URL
 **Key decisions:**
-- Custom code IS justified here — it's a 90-line Go bridge that adds Origin header, which frp doesn't support natively. Runs locally on home server, not on Render
-- Multi-stage Docker build keeps final image small (Go binary ~7MB static)
-- wsproxy is generic: `-listen`, `-target`, `-origin` flags. Could be used for other Cloudflare-gated WebSocket connections
+- DNS-01 over HTTP-01 (port 80 contested; DNS avoids port conflicts)
+- Reset DB schema rather than migrate server_name (only test users existed)
+- Local coturn + LiveKit instead of render.com tunnel for VoIP
+**Status:** done — `https://chator.duckdns.org` serves Element Web with open registration, LiveKit call widget at /call/
+**Credentials:**
+- Admin: `@admin2:chator.duckdns.org` / `admin2_pass_2026`
+- Registration: open with `m.login.dummy` (no email/captcha)
+- TURN secret: `chator-test-secret`
+**Remaining:** Federation test with matrix.org, actual Element Call browser test (waiting on user)
 
-**Status:** Done. Tunnel verified:
-- frpc logs: `login to server success, get run id [...]`
-- Endpoint: `GET /` → **200 OK**, serves Element Matrix client homepage
-- Full pipeline: Browser → Cloudflare → Render nginx → frps → wsproxy:7002 → frpc → caddy:80 → Element
+## 2026-05-29 — Synapse live on Supabase PostgreSQL
 
----
-
-## 2026-05-28 — Fix Render deploy (Dockerfile path) + verify live
-
-**Goal:** Get the stock FRP + nginx commit deployed after it failed due to stale Render config.
-
-**Context:** Commit `dd3278109` was pushed but auto-deploy failed. Render's service config still pointed to deleted `Dockerfile.frps`. ISP was blocking `api.render.com` but later came back.
-
+**Goal:** Get Synapse running stably on Supabase PostgreSQL via pooler
+**Context:** Synapse crashed on startup — collation mismatch (en_US.UTF-8 vs C) + pooler username format
 **Approach:**
-- Refreshed Render CLI connection (ISP was blocking, now works)
-- Found auto-deploy failed: `dockerfilePath: Dockerfile.frps` but file was deleted
-- Updated Render service via REST API:
-  - `envSpecificDetails.dockerfilePath`: `Dockerfile.frps` → `Dockerfile`
-  - `healthCheckPath`: `` → `/healthz`
-  - Used API key from `~/.render/cli.yaml`
-- Triggered manual deploy — **build passed, service LIVE**
-
-**Verified endpoints:**
-- `GET /healthz` → **200** (nginx)
-- `GET /~!frp` → **400** (frps control, expects WebSocket — correct)
-- `GET /` → **502** (nginx→frps:8080, expected — no frpc registered yet)
-
-**Current live deploy:** `dep-d8bj0lbj0mlc738vs3s0` (built at 17:57:08)
-
-**Key decisions:**
-- Render CLI has no `--dockerfile-path` flag on `services update`
-- Had to PATCH `envSpecificDetails.dockerfilePath` directly via API
-- Health check path set to `/healthz` (nginx handles it before proxy_pass)
-- `buildPlan: starter` shows in API (Render internal default for free tier tests) — not changed
-
-**Status:** Server side done. Wait for user to configure frpc on home server:
-`docker compose --profile frp up -d`
-
----
-
-## 2026-05-28 — Restore stock FRP with nginx on Render
-
-**Goal:** Replace wstunnel+demux custom stack with stock FRP (fatedier/frp). Fix WebSocket upgrade failures by using nginx for routing instead of custom Go demux.
-
-**Context:** The wstunnel detour was unnecessary — frp's WebSocket transport (`/~!frp`) worked fine through Render. The demux.go (custom Go code) was the real problem — user wants stock binaries only. nginx handles health checks + frp WebSocket routing.
-
-**Approach:**
-- `frp/Dockerfile` — stock nginx (Alpine package) + stock frps (GitHub release)
-- `frp/nginx.conf` — nginx routes `/healthz` directly, `/~!frp` to frps:7001, rest to frps:8080
-- `frp/frps.toml` — minimal stock frps config (bindPort=7001, no vhostHTTPPort)
-- `frp/Dockerfile.frpc` — stock frpc binary, generates config from env vars at runtime
-- `frp/frpc.toml` + `frp/frpc-entrypoint.sh` — TCP proxy (no customDomains needed), WebSocket transport
-- `render.yaml` — back to Docker runtime, free tier
-- `docker-compose.yml` — restored frpc service with `profiles: ["frp"]`
-
-**Architecture:**
-```
-Matrix client → Render (TLS) → nginx:$PORT
-  ├── /healthz → 200 OK
-  ├── /~!frp → WebSocket → frps:7001 (control)
-  └── /* → proxy → frps:8080 (TCP) → tunnel → frpc → caddy:80 → Synapse
-```
-- nginx on `$PORT` (stock, no custom code)
-- frps WebSocket transport on `bindPort=7001` (stock frp)
-- frpc connects via `wss://` with `transport.protocol = "websocket"`
-- TCP proxy (`remotePort=8080`) — no Host header matching (fragile with customDomains)
-- Free Render tier, well under 512MB RAM (nginx ~3MB + frps ~10MB)
-
-**Files created:**
-- `frp/Dockerfile` — nginx + frps in one image
-- `frp/nginx.conf` — routing config
-- `frp/frps.toml` — frps config
-- `frp/frpc.toml` — frpc config template
-- `frp/frpc-entrypoint.sh` — dynamic frpc config generation
-
+- Fixed `allow_unsafe_locale` placement: Synapse YAML config level, not psycopg2 args
+- Fixed pooler username: `postgres.ukymrxkunsylwiagdowy` (project ref suffix)
+- SCPed updated `supabase_db.py`, re-ran it, restarted Chator
+- All 7 supervisor processes running, Synapse 1.153.0 healthy
+- Registered admin2 user, verified login via Matrix API
 **Files modified:**
-- `frp/Dockerfile.frpc` — restored as stock frpc (was wstunnel client)
-- `render.yaml` — back to Docker runtime, no starter plan
-- `docker-compose.yml` — restored frpc service
-- `SESSIONS.md` — this entry
+- `docker/supabase_db.py` — added `allow_unsafe_locale: true` (at database: level, not args)
+**Status:** done — full stack operational
+**Notes:**
+- Admin user `admin2` / `admin2_pass_2026` registered and tested
+- Original `admin` user exists but password was mangled by PowerShell interpolation — left as-is
+- Synapse health: `curl localhost:8009/health` → OK
+- Element Web: serving at port 8008
+- Port 8008 → nginx → Synapse port 8009 proxying works
 
-**Files removed:**
-- `frp/Dockerfile.frps` — old approach with demux
-- `frp/demux.go` — custom Go code (user requirement: no custom code)
-- `frp/entrypoint.sh` — old entrypoint (was demux + frps or wstunnel)
-- `proxy/` — entire wowmow Ruby proxy approach (abandoned)
-- All other obsolete frp files
+## 2026-05-29 — Pooler username fix for Supabase DB auto-detect
 
-**Key decisions:**
-- **Stock FRP only** — no custom code. nginx + frps + frpc, all off-the-shelf
-- nginx replaces demux for routing — handles health checks + WebSocket split
-- TCP proxy type (not HTTP) — avoids fragile customDomains matching. Raw TCP forward to caddy
-- Free Render tier — no upgrade needed. RAM well under 512MB
-- WebSocket transport for frpc — works through Render's LB (TLS terminates at Render edge, plain WS reaches nginx)
-
-**Status:** Ready to commit and push. After deploy, run on home server:
-`docker compose --profile frp up -d`
-
----
-
-## 2026-05-27 — Replace frp with wstunnel for Cloudflare WebSocket compat
-
-**Goal:** Fix Cloudflare WebSocket upgrade failures (frp used `/~!frp` path which Cloudflare rejected). Replace frp entirely with wstunnel.
-
-**Context:** Cloudflare blocks WebSocket upgrades with path containing `~`. wstunnel uses clean paths (`/tunnel`). Moved wstunnel server into same Render container as demux, routing via dedicated internal port.
-
+**Goal:** Fix Supabase pooler tenant routing — pooler requires username `postgres.<PROJECT_REF>` not just `postgres`
+**Context:** Synapse failed to authenticate via pooler because Supabase pooler routes tenants by suffix in the username (`.ukymrxkunsylwiagdowy`)
 **Approach:**
-- Replaced frp binaries (frps/frpc) with wstunnel v10.5.5 (musl) in both Dockerfiles
-- Added demux routing: `GET /tunnel` → wstunnel on `:9999`
-- wstunnel server runs alongside demux in Render container (`entrypoint.sh`)
-- wstunnel client uses `--http-upgrade-path-prefix /tunnel` + `-R tcp://8080:caddy:80`
-- Removed all frp config generation (frps.toml, frpc.toml)
-- Tunnel client waits for caddy before connecting
-
+- Extracted `SUPABASE_PROJECT_REF` from the direct endpoint hostname (`db.ukymrxkunsylwiagdowy.supabase.co`)
+- Constructed `POOLER_USER = f"{PG_USER}.{SUPABASE_PROJECT_REF}"` (→ `postgres.ukymrxkunsylwiagdowy`)
+- Updated `pick_best()` to return `(host, port, name)` so caller knows which endpoint was selected
+- Updated `replace_db_section(path, host, port, name)` — uses `POOLER_USER` when `name == "pooler"`, else `PG_USER`
+- Fixed `main()` to unpack and pass the `name` through
 **Files modified:**
-- `docker-compose.yml` — frpc→wstunnel rename, env vars
-- `frp/Dockerfile.frpc` — frpc→wstunnel binary
-- `frp/Dockerfile.frps` — frps→wstunnel binary
-- `frp/demux.go` — added tunnelUpgradePath + tunnelPort routing
-- `frp/entrypoint.sh` — frps→wstunnel server bg + demux fg
-- `frp/frpc-entrypoint.sh` — frpc→wstunnel client with reverse tunnel
-
+- `docker/supabase_db.py` — added `SUPABASE_PROJECT_REF`, `POOLER_USER`, `name` plumbing through `pick_best` → `replace_db_section` → `main`
 **Key decisions:**
-- wstunnel inside existing Render container (single service, no extra networking)
-- wstunnel v10.5.5 (latest musl build with `--restrict-http-upgrade-path-prefix`)
-- Path `/tunnel` chosen to avoid Cloudflare filtering
-- Client URL has no path suffix (path set via `--http-upgrade-path-prefix`)
+- Derived `SUPABASE_PROJECT_REF` from `HOSTS[0]` hostname rather than hardcoding (though both refer to same project)
+- Function signature change (add `name` param) rather than re-deriving pooler status from port — cleaner
+**Status:** done — script now writes correct username per endpoint
 
-**Status:** Code committed + pushed → Render auto-deploy triggered. User needs to run `docker compose --profile frp up -d` on home server and verify.
+## 2026-05-28 — Docker build fix & full stack verification
 
----
-
-## 2026-05-27 — FRP demultiplexer deployed on Render
-
-**Goal:** Make frps work on Render's single `$PORT` limitation.
-
-**Context:** Render web services expose only one port. FRP frps needs separate control + vhost ports. Solution: TCP demultiplexer that routes by HTTP path prefix.
-
+**Goal:** Get Docker build to complete and full stack to run
+**Context:** Build failed with heredoc syntax error — Dockerfile had CRLF line endings from Windows editing
 **Approach:**
-- Wrote `frp/demux.go` — Go TCP demux, listens on `$PORT`
-  - `GET /~!frp` (frpc WebSocket control) → frps control:7001
-  - Other HTTP (Matrix API) → frps vhost:8080
-  - `GET /` (Render health check) → 200 OK directly
-- Updated Dockerfile.frps with multi-stage Go build
-- Updated entrypoint.sh: frps bg + demux fg
-
-**Files created/modified:**
-- `frp/demux.go` — new, TCP demultiplexer
-- `frp/Dockerfile.frps` — multi-stage build
-- `frp/entrypoint.sh` — runs frps + demux
-- `.gitignore` — added `frp/demux.exe`
-- `SESSIONS.md` — appended this entry
-
-**Tooling:**
-- Render CLI: `C:\cli_2.18.0_windows_amd64\cli_v2.18.0.exe`
-
-**Status:** frps deployed and LIVE on Render. Health check passes (returns OK). Next: run frpc locally to establish tunnel.
-
----
-
-## 2026-05-27 — Fixed frpc profile bug, no strategy change
-
-**Goal:** Fix docker-compose profile mismatch for frpc service.
-
-**Context:** frpc had `profiles: ["tunnel"]` but the session log said it should be `profiles: ["frp"]` to be exclusive from cloudflared. Cloudflared comment called it "Legacy" prematurely.
-
-**Approach:** Changed frpc profile to `["frp"]`, removed "Legacy" comment from cloudflared. No tunnel strategy changes.
-
+- Diagnosed build failure: `set: Illegal option -` caused by `\r` (CR) from CRLF line endings
+- Converted Dockerfile to Unix LF using PowerShell `ReadAllText` + regex replace
+- Also fixed Docker Desktop DNS issue (IPv6-only DNS was failing) by adding explicit IPv4 DNS to `daemon.json`
+- Built successfully (all but 1 layer cached)
+- Started `docker compose up -d` with coturn + chator + caddy
+- Verified all 7 supervisor processes running and all endpoints responding
 **Files modified:**
-- `docker-compose.yml` — frpc profile fix + cloudflared comment cleanup
-- `SESSIONS.md` — added this entry
-
+- `Dockerfile` — line endings CRLF→LF
+- `~/.docker/daemon.json` — added `"dns": ["1.1.1.1", "1.0.0.1", "8.8.8.8"]`
 **Key decisions:**
-- Leave render.yaml healthCheckPath as-is for now
-- No tunnel strategy change until user decides direction
-
-**Status:** done. User was presented with 4 options (cloudflared HTTP/2, TCP demux on Render, cheap VPS, or fix bugs only). Chose D — fix bugs only.
-
----
-
-## 2026-05-27 — Chator FRP tunnel + Render deployment + persistence
-
-**Goal:** Deploy Chator publicly accessible + set up persistent session memory.
-
-**Context:** ISP blocks all inbound, throttles HTTP/2 outbound, blocks api.github.com. No free hosting with CC-free signup found.
-
-**Approach:** FRP tunnel (frps on Render free tier, frpc local via WebSocket). SESSIONS.md for cross-session memory.
-
-**Files created/modified:**
-- `frp/Dockerfile.frps` — frps for Render, entrypoint generates config from `$PORT`
-- `frp/Dockerfile.frpc` — frpc with dynamic env-var-based config
-- `frp/entrypoint.sh` — generates frps.toml (`bindPort`=`vhostHTTPPort`=`$PORT`)
-- `frp/frpc-entrypoint.sh` — generates frpc.toml from `FRP_SERVER`, `AUTH_TOKEN`
-- `render.yaml` — Render blueprint
-- `docker-compose.yml` — added frpc service (tunnel profile)
-- `.env.example` — added `FRP_SERVER`, `FRP_AUTH_TOKEN`
-- `.devcontainer/setup.sh` — Codespace auto-config (ISP blocks API)
-- `SESSIONS.md` (new) — persistent session log in repo root
-- `~/.config/opencode/AGENTS.md` — added SESSIONS.md maintenance protocol
-
-**Key decisions:**
-- frps uses same port for control + HTTP (`bindPort = vhostHTTPPort = $PORT`)
-- frpc uses WebSocket + TLS to traverse Render's LB
-- SESSIONS.md in repo root (not gitignored), updated on session compaction
-- AGENTS.md instructs all agents to append to SESSIONS.md automatically
-
-**Status:** FRP configured on GitHub. SESSIONS.md protocol active. Next: deploy frps on Render.
-
----
-
-## 2026-05-27 — Initial session: Chator local deployment + ISP blocking analysis
-
-**Goal:** Make Chator server at 192.168.0.10 publicly accessible.
-
-**Analysis:** ISP blocks ALL inbound ports despite UPnP forwarding working (26 rules on router). Cloudflare Tunnel works but HTTP/2 persistent connection throttled (~40s drops). Play with Docker shut down (March 2026). Codespaces created but unreachable (api.github.com blocked).
-
-**Key findings:**
-- UPnP router limit: ~28 entries
-- Cloudflare Tunnel QUIC might bypass HTTP/2 throttling (untested)
-- Free hosting without CC: Render (needs testing), Koyeb (needs CC), Fly.io (needs CC)
-- Russian providers (Timeweb) might work but untested
-
-**Decisions:**
-- Pivot from UPnP → Cloudflare Tunnel → FRP on Render
-- Shrunk TURN relay range 49200→49180, UDP-only to fit router limit
-- Caddy port 80 catch-all for tunnel traffic instead of HTTPS redirect
+- CRLF→LF conversion on Dockerfile was the minimal fix — avoided rewriting heredoc with echo/printf
+- DNS fix was needed separately (Docker Desktop uses host DNS which preferred failing IPv6 DNS)
+**Status:** done

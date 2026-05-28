@@ -1,0 +1,95 @@
+# Synapse homeserver.yaml — Chator bare-metal
+# Database section is overwritten by supabase_db.py at startup.
+
+server_name: "localhost"
+pid_file: /var/run/matrix-synapse.pid
+listeners:
+  - port: 8009
+    tls: false
+    bind_addresses: ["127.0.0.1"]
+    type: http
+    x_forwarded: true
+    resources:
+      - names: [client, federation]
+        compress: true
+
+  # Metrics listener (optional, disabled by default)
+  - port: 19090
+    tls: false
+    bind_addresses: ["127.0.0.1"]
+    type: http
+    resources:
+      - names: [metrics]
+
+database:
+  name: sqlite3
+  args:
+    database: /var/lib/chator/homeserver.db
+
+log_config: /etc/chator/log.config
+
+media_store_path: /var/lib/matrix-synapse/media
+uploads_path: /var/lib/matrix-synapse/uploads
+
+enable_registration: true
+enable_registration_without_verification: true
+
+registration_shared_secret: "CHANGE_ME"
+macaroon_secret_key: "CHANGE_ME"
+form_secret: "CHANGE_ME"
+
+report_stats: no
+
+# Performance tuning for 1 GB RAM
+event_cache_size: "5K"
+max_upload_size: "50M"
+max_image_pixels: "32M"
+limit_usage_by_mru: true
+track_puppeted_user_ips: true
+
+# Federation
+federation_domain_whitelist: []
+federation_rc_window_size: 1000
+federation_rc_sleep_limit: 10
+federation_rc_sleep_delay: 500
+federation_rc_reject_limit: 50
+federation_rc_concurrent: 3
+
+# Ratelimiting
+rc_messages_per_second: 0.2
+rc_message_burst_count: 10.0
+rc_registration:
+  per_second: 0.01
+  burst_count: 5
+
+# Turn URIs (for voice/video calls)
+turn_uris:
+  - "stun:stun.l.google.com:19302"
+  - "turn:localhost:3478"
+turn_shared_secret: "chator-test-secret"
+turn_allow_guests: true
+turn_user_lifetime: "1h"
+
+# Experimental features for Element Call (MatrixRTC)
+experimental_features:
+  msc4143_enabled: true
+  msc3266_enabled: true
+  msc4222_enabled: true
+
+# MatrixRTC transports
+matrix_rtc:
+  transports:
+    - type: livekit
+      livekit_service_url: http://localhost:8008/livekit/jwt
+
+# Background updates
+update_syncing_users: true
+
+# Preserve logs
+retention:
+  default_policy:
+    min_lifetime: 1d
+    max_lifetime: 365d
+
+# Spam checker (minimal — disable federation spam for small server)
+suppress_key_server_warning: true
