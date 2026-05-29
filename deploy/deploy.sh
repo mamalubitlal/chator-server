@@ -219,6 +219,11 @@ cat > /usr/share/element-call/config.json << 'ECCALL'
 {"default_server_config":{"m.homeserver":{"base_url":"http://localhost:8008","server_name":"localhost"}},"livekit_jwt_service_url":"/livekit/jwt"}
 ECCALL
 
+# Apply Chator branding to Element Web and Element Call
+python3 "${REPO_DIR}/element-theme/branding.py" 2>/dev/null || {
+    info "Branding script not found, skipping"
+}
+
 # ============================================================================
 # 10. Install Sydent (Matrix Identity Server)
 # ============================================================================
